@@ -1,0 +1,23 @@
+import React from "react";
+
+const TopBar = () => {
+  return (
+    <div className="fixed top-0 left-0 right-0 flex justify-between p-8 text-[#303030] font-bold">
+      <div className="bg-white rounded-2xl flex gap-3 p-1.5 flashcard-shadow h-12">
+        <div className="bg-[#F1F1F1] flashcard-shadow rounded-xl px-3 grid place-items-center">
+          My cards
+        </div>
+        <div className="px-3 grid place-items-center">New +</div>
+      </div>
+      <div className="bg-white rounded-2xl flashcard-shadow relative grid place-items-center text-2xl px-4 h-12">
+        <div className="grid place-items-center">Common French Words</div>
+        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-sm">
+          French 201
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl flashcard-shadow grid place-items-center px-6">Profile</div>
+    </div>
+  );
+};
+
+export default TopBar;
