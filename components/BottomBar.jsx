@@ -1,6 +1,6 @@
 import React from "react";
 
-const BottomBar = ({ piles }) => {
+const BottomBar = ({ piles, round }) => {
   const totalCards = piles && piles.main.length + piles.know.length + piles.dontKnow.length;
   return (
     <div className="fixed left-8 bottom-6 bg-white rounded-2xl flashcard-shadow font-bold text-[#303030] flex gap-4 p-3 px-4 z-50 transition-all group select-none hover:scale-105">
@@ -8,7 +8,7 @@ const BottomBar = ({ piles }) => {
         <div className="transition-all duration-300 overflow-hidden text-[#BEBEBE] max-w-0 opacity-0 group-hover:max-w-[100px] group-hover:opacity-100">
           Stage:{" "}
         </div>
-        Assess
+        {round == 0 ? "Assess" : round % 2 == 1 ? "Learn" : "Review"}
       </div>
       <div className="flex">
         <div className="transition-all duration-300 overflow-hidden text-[#BEBEBE] max-w-0 opacity-0 whitespace-nowrap mr-1 group-hover:max-w-[180px] group-hover:opacity-100">
@@ -27,7 +27,7 @@ const BottomBar = ({ piles }) => {
         <div className="transition-all duration-300 overflow-hidden text-[#BEBEBE] max-w-0 opacity-0 group-hover:max-w-[80px] group-hover:opacity-100">
           Round:{" "}
         </div>
-        1
+        {round}
       </div>
     </div>
   );

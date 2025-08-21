@@ -1,0 +1,1 @@
+export const MAX_SMALL_CARD_STACK_HEIGHT = 20;
