@@ -11,12 +11,12 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
 
   useEffect(() => {
     setIsShuffled(
-      piles.main.length > 0 &&
-        !piles.main.every(
-          (card, i) => i === 0 || card.index > piles.main[i - 1].index
+      piles.dontKnow.length > 0 &&
+        !piles.dontKnow.every(
+          (card, i) => i === 0 || card.index > piles.dontKnow[i - 1].index
         )
     );
-  }, [piles.main]);
+  }, [piles.dontKnow]);
 
   const toggleShuffle = (e) => {
     setPiles((prev) => {
@@ -24,18 +24,18 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
 
       if (isShuffled) {
         // Restore original order based on card.index
-        newPiles.main = [...newPiles.main].sort((a, b) => a.index - b.index);
+        newPiles.dontKnow = [...newPiles.dontKnow].sort((a, b) => a.index - b.index);
       } else {
-        // Shuffle the main pile
-        const shuffledMain = [...newPiles.main];
-        for (let i = shuffledMain.length - 1; i > 0; i--) {
+        // Shuffle the dontKnow pile
+        const shuffledDontKnow = [...newPiles.dontKnow];
+        for (let i = shuffledDontKnow.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
-          [shuffledMain[i], shuffledMain[j]] = [
-            shuffledMain[j],
-            shuffledMain[i],
+          [shuffledDontKnow[i], shuffledDontKnow[j]] = [
+            shuffledDontKnow[j],
+            shuffledDontKnow[i],
           ];
         }
-        newPiles.main = shuffledMain;
+        newPiles.dontKnow = shuffledDontKnow;
       }
 
       return newPiles;
@@ -290,9 +290,13 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
             piles.dontKnow.length < 1 && "opacity-90 h-[310px]"
           }`}
         >
-          <h1 className="text-6xl">Well done!</h1>
+          <h1 className="text-6xl">
+            {piles.discard.length == 0 ? "Congrats!" : "Well done!"}
+          </h1>
           <h2 className="text-3xl mb-3 text-[#7C7C7C]">
-            You have tested your knowledge of{" "}
+            {piles.discard.length == 0
+              ? "You have learned all of "
+              : "You have tested your knowledge of "}
             <span className="text-[#303030]">Common French Words</span>
           </h2>
           <div className="text-[#6AAD6A] text-3xl">
@@ -308,12 +312,29 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
             >
               Back
             </button>
-            <button
-              onClick={() => setRound((prev) => prev + 1)}
-              className="bg-[#CBF2CB] outline-2 outline-[#BFEBBF] rounded-2xl p-2 px-12 flashcard-shadow cursor-pointer transition-all hover:scale-105"
-            >
-              Continue &gt;
-            </button>
+            {piles.discard.length == 0 ? (
+              <>
+                <button
+                  onClick={undo}
+                  className="bg-white rounded-2xl p-2 px-4 flashcard-shadow cursor-pointer transition-all hover:scale-105"
+                >
+                  Restart
+                </button>
+                <button
+                  onClick={() => setRound((prev) => prev + 1)}
+                  className="bg-[#CBF2CB] outline-2 outline-[#BFEBBF] rounded-2xl p-2 px-12 flashcard-shadow cursor-pointer transition-all hover:scale-105"
+                >
+                  Go home &gt;
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setRound((prev) => prev + 1)}
+                className="bg-[#CBF2CB] outline-2 outline-[#BFEBBF] rounded-2xl p-2 px-12 flashcard-shadow cursor-pointer transition-all hover:scale-105"
+              >
+                Continue &gt;
+              </button>
+            )}
           </div>
         </div>
         <div className="absolute -left-10 -right-10 bottom-5 h-10 bg-gradient-to-b from-[#f1f1f100] to-[#f1f1f1] z-20"></div>

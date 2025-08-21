@@ -1,63 +1,39 @@
 "use client";
-import { useEffect, useState } from "react";
-import { cards as initialCards } from "../data/cards";
+import { Pin } from "lucide-react";
 import TopBar from "@/components/TopBar";
-import BottomBar from "@/components/BottomBar";
-import AssessScreen from "@/components/Screens/AssessScreen";
-import LearnScreen from "@/components/Screens/LearnScreen";
-import TestScreen from "@/components/Screens/TestScreen";
 
 export default function Home() {
-  const [piles, setPiles] = useState({
-    main: initialCards,
-    know: [],
-    dontKnow: [],
-    discard: [],
-  });
-  const [history, setHistory] = useState([]);
-  const [round, setRound] = useState(0);
-
-  useEffect(() => {
-    if (round !== 0 && round % 2 === 0) {
-      setHistory([]);
-    }
-    console.log(round, round !== 1 && round % 2 === 1);
-    if (round !== 1 && round % 2 === 1) {
-      console.log(piles);
-      setPiles((prev) => {
-        const newPiles = { ...prev };
-        newPiles.dontKnow = newPiles.discard;
-        newPiles.discard = [];
-        return newPiles;
-      });
-    }
-  }, [round]);
-
   return (
-    <main className="flex flex-col items-end justify-center min-h-screen p-10 bg-[#F1F1F1]">
+    <main className="flex flex-col items-end justify-center min-h-screen bg-[#F1F1F1]">
       <TopBar />
-      {round == 0 ? (
-        <AssessScreen
-          piles={piles}
-          setPiles={setPiles}
-          history={history}
-          setHistory={setHistory}
-          setRound={setRound}
-        />
-      ) : round % 2 == 1 ? (
-        <LearnScreen piles={piles} setPiles={setPiles} setRound={setRound} />
-      ) : (
-        round % 2 == 0 && (
-          <TestScreen
-            piles={piles}
-            setPiles={setPiles}
-            history={history}
-            setHistory={setHistory}
-            setRound={setRound}
-          />
-        )
-      )}
-      <BottomBar piles={piles} round={round} />
+      {/* Horizontal scroll container */}
+      <div className="flex gap-5 overflow-x-auto px-10 h-screen hide-scrollbar w-full">
+        <div
+          className="flex font-bold text-[#303030]"
+          // style={{ minWidth: `${30 * 32}rem` }} // 30 columns * 32rem (adjust as needed)
+        >
+          {Array.from({ length: 30 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex flex-col px-10 py-32 items-left overflow-y-auto hide-scrollbar w-[560px]"
+            >
+              <button className="mb-2">
+                <Pin strokeWidth={3} size={20} color="#303030" />
+              </button>
+              <h1 className="text-4xl uppercase w-full mb-6">Math 6</h1>
+              {/* Vertical scroll for column content */}
+              <div className="w-full grid grid-cols-2 gap-5">
+                {Array.from({ length: 20 }).map((_, j) => (
+                  <div
+                    key={j}
+                    className="w-full aspect-[1.79] bg-white rounded-xl flashcard-shadow"
+                  ></div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </main>
   );
 }

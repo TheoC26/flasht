@@ -16,3 +16,12 @@ body {
 .flashcard-shadow {
   box-shadow: 0px 25px 35px -30px rgba(0, 0, 0, 0.1);
 }
+
+/* Add this to your global CSS file */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}

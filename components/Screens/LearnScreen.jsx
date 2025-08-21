@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const LearnScreen = ({ piles, setPiles, setRound }) => {
   const [flipped, setFlipped] = useState(false);
-  const [dontKnowCards, setDontKnowCards] = useState(piles.dontKnow);
-  const [seenCards, setSeenCards] = useState([]);
+  // const [dontKnowCards, setDontKnowCards] = useState(piles.dontKnow);
+  // const [seenCards, setSeenCards] = useState([]);
 
   const [isGrid, setIsGrid] = useState(true);
 
@@ -14,53 +14,76 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
 
   useEffect(() => {
     setIsShuffled(
-      dontKnowCards.length > 0 &&
-        !dontKnowCards.every(
-          (card, i) => i === 0 || card.index > dontKnowCards[i - 1].index
+      piles.dontKnow.length > 0 &&
+        !piles.dontKnow.every(
+          (card, i) => i === 0 || card.index > piles.dontKnow[i - 1].index
         )
     );
-  }, [dontKnowCards]);
+  }, [piles.dontKnow]);
 
   const toggleShuffle = (e) => {
-    setDontKnowCards((prev) => {
+    setPiles((prev) => {
+      const newPiles = { ...prev };
+
       if (isShuffled) {
         // Restore original order based on card.index
-        return [...prev].sort((a, b) => a.index - b.index);
+        newPiles.dontKnow = [...newPiles.dontKnow].sort(
+          (a, b) => a.index - b.index
+        );
       } else {
-        // Shuffle the dontKnowCards pile
-        const shuffled = [...prev];
-        for (let i = shuffled.length - 1; i > 0; i--) {
+        // Shuffle the dontKnow pile
+        const shuffledDontKnow = [...newPiles.dontKnow];
+        for (let i = shuffledDontKnow.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          [shuffledDontKnow[i], shuffledDontKnow[j]] = [
+            shuffledDontKnow[j],
+            shuffledDontKnow[i],
+          ];
         }
-        return shuffled;
+        newPiles.dontKnow = shuffledDontKnow;
       }
+
+      return newPiles;
     });
 
-    setIsShuffled((prev) => !prev);
+    setIsShuffled(!isShuffled);
   };
 
   const flip = () => setFlipped((prev) => !prev);
 
   const next = () => {
-    if (dontKnowCards.length === 0) return;
-    const card = dontKnowCards[0];
-    setDontKnowCards((prev) => prev.slice(1));
-    setSeenCards((prev) => [...prev, card]);
+    if (piles.dontKnow.length === 0) return;
+    const card = piles.dontKnow[0];
+    setPiles((prev) => {
+      const newPiles = { ...prev };
+      newPiles.dontKnow = [...newPiles.dontKnow.slice(1)];
+      newPiles.discard = [card, ...newPiles.discard];
+      return newPiles;
+    });
     setFlipped(false);
   };
 
   const back = () => {
-    if (seenCards.length === 0) return;
-    const lastCard = seenCards[seenCards.length - 1];
-    setSeenCards((prev) => prev.slice(0, -1));
-    setDontKnowCards((prev) => [lastCard, ...prev]);
+    if (piles.discard.length === 0) return;
+    const lastCard = piles.discard[piles.discard.length - 1];
+    setPiles((prev) => {
+      const newPiles = { ...prev };
+      newPiles.discard = newPiles.discard.slice(0, -1);
+      newPiles.dontKnow = [lastCard, ...newPiles.dontKnow];
+      return newPiles;
+    });
     setFlipped(false);
   };
 
   const restart = () => {
-    const restartedCards = [...[...seenCards], ...dontKnowCards];
-    setDontKnowCards(restartedCards);
+    const restartedCards = [...[...piles.discard], ...piles.dontKnow].reverse();
+
+    setPiles((prev) => {
+      const newPiles = { ...prev };
+      newPiles.discard = [];
+      newPiles.dontKnow = [...restartedCards];
+      return newPiles;
+    });
 
     setIsShuffled(
       restartedCards.length > 0 &&
@@ -68,7 +91,6 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
           (card, i) => i === 0 || card.index > restartedCards[i - 1].index
         )
     );
-    setSeenCards([]);
   };
 
   useEffect(() => {
@@ -93,7 +115,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
           restart();
           break;
         case "Enter":
-          if (dontKnowCards.length === 0) {
+          if (piles.dontKnow.length === 0) {
             e.preventDefault();
             setRound((prev) => prev + 1);
           }
@@ -163,10 +185,10 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
 
   return (
     <div className="w-[600px] mx-auto flex-col items-center justify-center mt-28 relative">
-      <CardStack cards={dontKnowCards} />
+      <CardStack cards={piles.dontKnow} />
       <div
         className={`absolute text-[#303030] font-bold left-10 top-20 opacity-0 delay-300 duration-500 transition-opacity ${
-          dontKnowCards.length < 1 && "opacity-90 h-[310px]"
+          piles.dontKnow.length < 1 && "opacity-90 h-[310px]"
         }`}
       >
         <h1 className="text-4xl">Thats it!</h1>
@@ -201,7 +223,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
       </div>
       <div
         className={`mt-10 flex gap-3 font-bold justify-center ${
-          dontKnowCards.length < 1 && "opacity-0"
+          piles.dontKnow.length < 1 && "opacity-0"
         }`}
       >
         <div className="flex flex-col relative z-30">
@@ -239,7 +261,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
         </div>
       </div>
       <div className="w-full h-96 mt-16 font-bold text-[#303030]">
-        <div className="flex bg-white flashcard-shadow rounded-xl text-xs w-fit relative">
+        <div className={`flex bg-white flashcard-shadow rounded-xl text-xs w-fit relative transition-all ${piles.dontKnow.length + piles.discard.length < 1 && "opacity-0"}`}>
           <div
             className={`absolute top-0 bottom-0 transition-all ${
               isGrid ? "w-14.5 left-0" : "w-14 left-14"
@@ -260,23 +282,27 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
         </div>
         {isGrid ? (
           <div className="w-full grid grid-cols-3 mt-3 gap-2 pb-28">
-            {[...piles.dontKnow].reverse().map((card, i) => (
-              <Flashcard key={card.id} card={card} size="grid" />
-            ))}
+            {[...[...piles.discard], ...piles.dontKnow]
+              .sort((a, b) => a.index - b.index)
+              .map((card, i) => (
+                <Flashcard key={card.id} card={card} size="grid" />
+              ))}
           </div>
         ) : (
           <div className="flex-col mt-3 pb-28">
-            {[...piles.dontKnow].reverse().map((card, i) => (
-              <div
-                key={card.id}
-                className="bg-white flashcard-shadow rounded-xl w-full items-center flex p-1 mb-1.5"
-              >
-                <div className="p-3 w-32 text-center">{card.front}</div>
-                <div className="w-px h-10 my-auto bg-[#D7D7D7]"></div>
-                <div className="p-3 px-5 flex-1">{card.back}</div>
-                <div className="p-3">dots</div>
-              </div>
-            ))}
+            {[...[...piles.discard], ...piles.dontKnow]
+              .sort((a, b) => a.index - b.index)
+              .map((card, i) => (
+                <div
+                  key={card.id}
+                  className="bg-white flashcard-shadow rounded-xl w-full items-center flex p-1 mb-1.5"
+                >
+                  <div className="p-3 w-32 text-center">{card.front}</div>
+                  <div className="w-px h-10 my-auto bg-[#D7D7D7]"></div>
+                  <div className="p-3 px-5 flex-1">{card.back}</div>
+                  <div className="p-3">dots</div>
+                </div>
+              ))}
           </div>
         )}
       </div>

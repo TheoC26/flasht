@@ -1,7 +1,7 @@
 import React from "react";
 
 const BottomBar = ({ piles, round }) => {
-  const totalCards = piles && piles.main.length + piles.know.length + piles.dontKnow.length;
+  const totalCards = piles && piles.main.length + piles.know.length + piles.dontKnow.length + piles.discard.length;
   return (
     <div className="fixed left-8 bottom-6 bg-white rounded-2xl flashcard-shadow font-bold text-[#303030] flex gap-4 p-3 px-4 z-50 transition-all group select-none hover:scale-105">
       <div className="flex gap-1">
