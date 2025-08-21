@@ -8,14 +8,14 @@ const BottomBar = ({ piles, round }) => {
         <div className="transition-all duration-300 overflow-hidden text-[#BEBEBE] max-w-0 opacity-0 group-hover:max-w-[100px] group-hover:opacity-100">
           Stage:{" "}
         </div>
-        {round == 0 ? "Assess" : round % 2 == 1 ? "Learn" : "Review"}
+        {round == 0 ? "Assess" : round % 2 == 1 ? "Learn" : "Test"}
       </div>
       <div className="flex">
         <div className="transition-all duration-300 overflow-hidden text-[#BEBEBE] max-w-0 opacity-0 whitespace-nowrap mr-1 group-hover:max-w-[180px] group-hover:opacity-100">
           Know/Don’t know/Total:
         </div>
         <span className="text-[#6AAD6A]">{piles && piles.know.length}</span>/
-        <span className="text-[#C98282]">{piles && piles.dontKnow.length}</span>/<span>{totalCards}</span>
+        <span className="text-[#C98282]">{piles && piles.dontKnow.length + piles.discard.length}</span>/<span>{totalCards}</span>
       </div>
       <div className="flex gap-1">
         <div className="transition-all duration-300 overflow-hidden text-[#BEBEBE] max-w-0 opacity-0 whitespace-nowrap group-hover:max-w-[120px] group-hover:opacity-100">

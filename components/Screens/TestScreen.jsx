@@ -4,7 +4,7 @@ import { MAX_SMALL_CARD_STACK_HEIGHT } from "@/constants";
 
 import Flashcard from "@/components/Flashcard";
 
-const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
+const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   const draggedCardRef = useRef(null);
   const [flipped, setFlipped] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
@@ -46,39 +46,30 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
 
   const flip = () => setFlipped(!flipped);
 
-  const skip = () => {
-    if (piles.main.length === 0) return;
-    const card = piles.main[0];
-    setHistory([...history, { cardId: card.id, from: "main", to: "main" }]);
+  const next = () => {
+    if (piles.dontKnow.length === 0) return;
+    const card = piles.dontKnow[0];
+    setHistory([
+      ...history,
+      { cardId: card.id, from: "dontKnow", to: "discard" },
+    ]);
     setPiles((prev) => {
       const newPiles = { ...prev };
-      newPiles.main = [...newPiles.main.slice(1), card];
+      newPiles.dontKnow = [...newPiles.dontKnow.slice(1)];
+      newPiles.discard = [card, ...newPiles.discard]
       return newPiles;
     });
     setFlipped(false);
   };
 
   const know = () => {
-    if (piles.main.length === 0) return;
-    const card = piles.main[0];
-    setHistory([...history, { cardId: card.id, from: "main", to: "know" }]);
+    if (piles.dontKnow.length === 0) return;
+    const card = piles.dontKnow[0];
+    setHistory([...history, { cardId: card.id, from: "dontKnow", to: "know" }]);
     setPiles((prev) => {
       const newPiles = { ...prev };
-      newPiles.main = newPiles.main.slice(1);
+      newPiles.dontKnow = newPiles.dontKnow.slice(1);
       newPiles.know = [card, ...newPiles.know];
-      return newPiles;
-    });
-    setFlipped(false);
-  };
-
-  const dontKnow = () => {
-    if (piles.main.length === 0) return;
-    const card = piles.main[0];
-    setHistory([...history, { cardId: card.id, from: "main", to: "dontKnow" }]);
-    setPiles((prev) => {
-      const newPiles = { ...prev };
-      newPiles.main = newPiles.main.slice(1);
-      newPiles.dontKnow = [card, ...newPiles.dontKnow];
       return newPiles;
     });
     setFlipped(false);
@@ -89,13 +80,13 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
     const lastMove = history[history.length - 1];
     const { cardId, from, to } = lastMove;
 
-    if (from === "main" && to === "main") {
+    if (from === "dontKnow" && to === "dontKnow") {
       setPiles((prev) => {
         const newPiles = { ...prev };
-        const lastCard = newPiles.main[newPiles.main.length - 1];
-        newPiles.main = [
+        const lastCard = newPiles.dontKnow[newPiles.dontKnow.length - 1];
+        newPiles.dontKnow = [
           lastCard,
-          ...newPiles.main.slice(0, newPiles.main.length - 1),
+          ...newPiles.dontKnow.slice(0, newPiles.dontKnow.length - 1),
         ];
         return newPiles;
       });
@@ -115,7 +106,7 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   };
 
   const onCardDragEnd = (e, card) => {
-    const dropZones = ["main", "know", "dontKnow"];
+    const dropZones = ["know", "dontKnow"];
     const dropZoneElements = dropZones.map((id) =>
       document.getElementById(`pile-${id}`)
     );
@@ -174,9 +165,6 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
         case "ArrowLeft":
           undo();
           break;
-        case "2":
-          dontKnow();
-          break;
         case "3":
         case " ":
         case "ArrowUp":
@@ -188,7 +176,7 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
           break;
         case "5":
         case "ArrowRight":
-          skip();
+          next();
           break;
         case "Enter":
           if (piles.main.length === 0) {
@@ -206,7 +194,7 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [undo, dontKnow, flip, know, skip]);
+  }, [undo, flip, know, next]);
 
   const CardStack = ({ pileName, cards, size = "md" }) => {
     const isSmall = size === "sm";
@@ -296,22 +284,22 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   return (
     <div className="w-full max-w-[100rem] mx-auto flex justify-center items-end overflow-hidden">
       <div className="flex flex-col items-center mr-20 mb-5 relative">
-        <CardStack pileName="main" size="md" cards={piles.main} />
+        <CardStack pileName="dontKnow" size="md" cards={piles.dontKnow} />
         <div
           className={`absolute text-[#303030] font-bold left-10 top-5 opacity-0 delay-300 duration-500 transition-opacity ${
-            piles.main.length < 1 && "opacity-90 h-[310px]"
+            piles.dontKnow.length < 1 && "opacity-90 h-[310px]"
           }`}
         >
           <h1 className="text-6xl">Well done!</h1>
           <h2 className="text-3xl mb-3 text-[#7C7C7C]">
-            You have assessed your knowledge of{" "}
+            You have tested your knowledge of{" "}
             <span className="text-[#303030]">Common French Words</span>
           </h2>
           <div className="text-[#6AAD6A] text-3xl">
             You know: {piles.know.length} Cards
           </div>
           <div className="text-[#C98282] text-3xl">
-            You are still learning: {piles.dontKnow.length} Cards
+            You are still learning: {piles.discard.length} Cards
           </div>
           <div className="flex gap-5 text-2xl mt-5">
             <button
@@ -332,7 +320,7 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
         <div className="absolute -left-10 -right-10 -bottom-[500px] h-[520px] bg-[#f1f1f1] z-20"></div>
         <div
           className={`mt-10 flex gap-3 z-30 justify-center font-bold transition-all ${
-            piles.main.length < 1 && "opacity-0"
+            piles.dontKnow.length < 1 && "opacity-0"
           }`}
         >
           <div className="flex flex-col relative">
@@ -348,17 +336,6 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
           </div>
           <div className="flex flex-col relative">
             <button
-              onClick={dontKnow}
-              className="text-center w-32 py-2.5 select-none text-sm text-gray-600 bg-[#FFCACA] outline-2 outline-[#F7C1C1] rounded-xl flashcard-shadow transition-all cursor-pointer hover:scale-105"
-            >
-              Don't know
-            </button>
-            <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[#BFBFBF]">
-              2
-            </div>
-          </div>
-          <div className="flex flex-col relative">
-            <button
               onClick={flip}
               className="px-6 py-2.5 select-none text-sm text-gray-600 bg-white rounded-xl flashcard-shadow transition-all cursor-pointer hover:scale-105"
             >
@@ -366,6 +343,17 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
             </button>
             <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[#BFBFBF]">
               3
+            </div>
+          </div>
+          <div className="flex flex-col relative">
+            <button
+              onClick={next}
+              className="px-6 py-2.5 select-none text-sm text-gray-600 bg-white rounded-xl flashcard-shadow transition-all cursor-pointer hover:scale-105"
+            >
+              Next
+            </button>
+            <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[#BFBFBF]">
+              5
             </div>
           </div>
           <div className="flex flex-col relative">
@@ -379,45 +367,6 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
               4
             </div>
           </div>
-          <div className="flex flex-col relative">
-            <button
-              onClick={skip}
-              className="px-6 py-2.5 select-none text-sm text-gray-600 bg-white rounded-xl flashcard-shadow transition-all cursor-pointer hover:scale-105"
-            >
-              Skip
-            </button>
-            <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[#BFBFBF]">
-              5
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        id="pile-dontKnow"
-        className="p-4 rounded-xl h-[55vh] flex items-end justify-center relative"
-      >
-        {piles.dontKnow.length >= MAX_SMALL_CARD_STACK_HEIGHT && (
-          <>
-            <div className="absolute -left-0 -right-0 bottom-10 h-10 bg-gradient-to-b from-[#f1f1f100] to-[#f1f1f1] z-40"></div>
-            <div className="absolute -left-0 -right-0 -bottom-[500px] h-[540px] bg-[#f1f1f1] z-40"></div>
-          </>
-        )}
-        <CardStack pileName="dontKnow" size="sm" cards={piles.dontKnow} />
-        <div
-          className={`absolute transition-all text-xl font-bold text-[#303030] ${
-            piles.dontKnow.length < 1 && "opacity-0"
-          }`}
-          style={{
-            bottom:
-              piles.dontKnow.length <= MAX_SMALL_CARD_STACK_HEIGHT
-                ? piles.dontKnow.length * 10 + 150
-                : MAX_SMALL_CARD_STACK_HEIGHT * 10 + 150,
-          }}
-        >
-          Don't Know
-        </div>
-        <div className="w-[193.23px] h-[107.73px] absolute font-bold text-[#303030] bottom-[32px] rounded-xl bg-[#D9D9D9] border-4 border-[#C6C6C6] grid place-items-center">
-          Don't Know
         </div>
       </div>
       <div
@@ -452,4 +401,4 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   );
 };
 
-export default AssessScreen;
+export default TestScreen;

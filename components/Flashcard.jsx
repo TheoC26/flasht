@@ -1,14 +1,16 @@
 "use client";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { Shuffle } from "lucide-react";
 
-export default function Flashcard({ card, size = "md", flipped = false }) {
+export default function Flashcard({ card, size = "md", flipped = false, isShuffled, toggleShuffle = () => {} }) {
   const [isFlipped, setIsFlipped] = useState(flipped);
 
   useEffect(() => {
     setIsFlipped(flipped)
   }, [flipped])
 
+  const isMain = size == "md";
   const isSmall = size === "sm";
   const isGrid = size === "grid";
 
@@ -38,6 +40,15 @@ export default function Flashcard({ card, size = "md", flipped = false }) {
         } font-bold text-[#303030] backface-hidden`}
         style={{ transform: "rotateX(0deg)" }}
       >
+        {isMain && (
+          <button className="absolute top-3 right-3 cursor-pointer">
+            <Shuffle
+              color={isShuffled ? "#303030" : "#959595"}
+              size={20}
+              onClick={toggleShuffle}
+            />
+          </button>
+        )}
         {card.front}
       </div>
       <div
