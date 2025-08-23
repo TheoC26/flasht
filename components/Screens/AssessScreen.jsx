@@ -190,6 +190,9 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
         case "ArrowRight":
           skip();
           break;
+        case "s":
+          toggleShuffle();
+          break;
         case "Enter":
           if (piles.main.length === 0) {
             e.preventDefault();
@@ -284,6 +287,7 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
                     transform: `rotateX(20deg)`, // slight scale for depth
                     boxShadow: "0 1px 7px rgba(0,0,0,0.08)",
                   }}
+                  transition={{ duration: 0.1 }}
                 ></motion.div>
               ))}
             </div>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MAX_SMALL_CARD_STACK_HEIGHT } from "@/constants";
 
 import Flashcard from "@/components/Flashcard";
+import Link from "next/link";
 
 const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   const draggedCardRef = useRef(null);
@@ -24,7 +25,9 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
 
       if (isShuffled) {
         // Restore original order based on card.index
-        newPiles.dontKnow = [...newPiles.dontKnow].sort((a, b) => a.index - b.index);
+        newPiles.dontKnow = [...newPiles.dontKnow].sort(
+          (a, b) => a.index - b.index
+        );
       } else {
         // Shuffle the dontKnow pile
         const shuffledDontKnow = [...newPiles.dontKnow];
@@ -56,7 +59,7 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
     setPiles((prev) => {
       const newPiles = { ...prev };
       newPiles.dontKnow = [...newPiles.dontKnow.slice(1)];
-      newPiles.discard = [card, ...newPiles.discard]
+      newPiles.discard = [card, ...newPiles.discard];
       return newPiles;
     });
     setFlipped(false);
@@ -178,6 +181,9 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
         case "ArrowRight":
           next();
           break;
+        case "s":
+          toggleShuffle();
+          break;
         case "Enter":
           if (piles.main.length === 0) {
             e.preventDefault();
@@ -265,6 +271,7 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
                 <motion.div
                   key={card.id + "mini"}
                   layoutId={card.id + "mini"}
+                  transition={{ duration: 0.1 }}
                   className="w-full absolute flashcard-shadow aspect-[1.79] bg-white rounded-sm"
                   style={{
                     bottom: `${i * 3}px`, // increase for more visible offset
@@ -320,12 +327,12 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
                 >
                   Restart
                 </button>
-                <button
-                  onClick={() => setRound((prev) => prev + 1)}
+                <Link
+                  href={"/"}
                   className="bg-[#CBF2CB] outline-2 outline-[#BFEBBF] rounded-2xl p-2 px-12 flashcard-shadow cursor-pointer transition-all hover:scale-105"
                 >
                   Go home &gt;
-                </button>
+                </Link>
               </>
             ) : (
               <button

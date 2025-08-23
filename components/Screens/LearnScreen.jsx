@@ -1,12 +1,10 @@
-//  TODO: USE DISCARD PILE INSTEAD OF THE DONT KNOW CARDS THING
 import React, { useEffect, useState } from "react";
 import Flashcard from "../Flashcard";
 import { motion, AnimatePresence } from "framer-motion";
+import ListItem from "../UI/ListItem";
 
 const LearnScreen = ({ piles, setPiles, setRound }) => {
   const [flipped, setFlipped] = useState(false);
-  // const [dontKnowCards, setDontKnowCards] = useState(piles.dontKnow);
-  // const [seenCards, setSeenCards] = useState([]);
 
   const [isGrid, setIsGrid] = useState(true);
 
@@ -76,7 +74,11 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
   };
 
   const restart = () => {
-    const restartedCards = [...[...piles.discard], ...piles.dontKnow].reverse();
+    const restartedCards = isShuffled
+      ? [...[...piles.discard], ...piles.dontKnow]
+      : [...[...piles.discard], ...piles.dontKnow].sort(
+          (a, b) => a.index - b.index
+        );
 
     setPiles((prev) => {
       const newPiles = { ...prev };
@@ -114,6 +116,9 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
         case "r":
           restart();
           break;
+        case "s":
+          toggleShuffle();
+          break;
         case "Enter":
           if (piles.dontKnow.length === 0) {
             e.preventDefault();
@@ -133,7 +138,6 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
   }, [back, flip, next]);
 
   const CardStack = ({ cards }) => {
-    // console.log(cards)
     return (
       <div
         className={`card-stack relative flex items-end mx-auto justify-center w-[600px] h-[310px]`}
@@ -141,7 +145,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
         <AnimatePresence>
           {[...cards].slice(0, 5).map((card, i) => (
             <motion.div
-              key={card.id || i}
+              key={card.id}
               layoutId={card.id}
               className="absolute"
               style={{
@@ -158,8 +162,10 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
               />
             </motion.div>
           ))}
-          <div className="absolute -left-10 -right-10 -bottom-[40px] h-10 bg-gradient-to-b from-[#f1f1f100] to-[#f1f1f1] z-20"></div>
-          <div className="absolute -left-10 -right-10 -bottom-[100px] h-[60px] bg-[#f1f1f1] z-20"></div>
+        </AnimatePresence>
+        <div className="absolute -left-10 -right-10 -bottom-[40px] h-10 bg-gradient-to-b from-[#f1f1f100] to-[#f1f1f1] z-20"></div>
+        <div className="absolute -left-10 -right-10 -bottom-[100px] h-[60px] bg-[#f1f1f1] z-20"></div>
+        <AnimatePresence>
           <div
             className="absolute -left-12 bottom-0 w-10"
             style={{ perspective: "200px" }}
@@ -167,7 +173,8 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
             {[...cards].reverse().map((card, i) => (
               <motion.div
                 layoutId={card.id + "mini"}
-                key={card.id + "mini" || i + "mini"}
+                key={card.id + "mini"}
+                transition={{ duration: 0.1 }}
                 className="w-full absolute flashcard-shadow aspect-[1.79] bg-white rounded-sm"
                 style={{
                   bottom: `${i * 3}px`, // increase for more visible offset
@@ -184,7 +191,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
   };
 
   return (
-    <div className="w-[600px] mx-auto flex-col items-center justify-center mt-28 relative">
+    <div className="w-[600px] mx-auto flex-col items-center justify-center mt-40 relative">
       <CardStack cards={piles.dontKnow} />
       <div
         className={`absolute text-[#303030] font-bold left-10 top-20 opacity-0 delay-300 duration-500 transition-opacity ${
@@ -261,7 +268,11 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
         </div>
       </div>
       <div className="w-full h-96 mt-16 font-bold text-[#303030]">
-        <div className={`flex bg-white flashcard-shadow rounded-xl text-xs w-fit relative transition-all ${piles.dontKnow.length + piles.discard.length < 1 && "opacity-0"}`}>
+        <div
+          className={`flex bg-white flashcard-shadow rounded-xl text-xs w-fit relative transition-all ${
+            piles.dontKnow.length + piles.discard.length < 1 && "opacity-0"
+          }`}
+        >
           <div
             className={`absolute top-0 bottom-0 transition-all ${
               isGrid ? "w-14.5 left-0" : "w-14 left-14"
@@ -285,7 +296,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
             {[...[...piles.discard], ...piles.dontKnow]
               .sort((a, b) => a.index - b.index)
               .map((card, i) => (
-                <Flashcard key={card.id} card={card} size="grid" />
+                <Flashcard key={card.id + card.front} card={card} size="grid" />
               ))}
           </div>
         ) : (
@@ -293,15 +304,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
             {[...[...piles.discard], ...piles.dontKnow]
               .sort((a, b) => a.index - b.index)
               .map((card, i) => (
-                <div
-                  key={card.id}
-                  className="bg-white flashcard-shadow rounded-xl w-full items-center flex p-1 mb-1.5"
-                >
-                  <div className="p-3 w-32 text-center">{card.front}</div>
-                  <div className="w-px h-10 my-auto bg-[#D7D7D7]"></div>
-                  <div className="p-3 px-5 flex-1">{card.back}</div>
-                  <div className="p-3">dots</div>
-                </div>
+                <ListItem key={card.id + card.front} card={card} />
               ))}
           </div>
         )}
