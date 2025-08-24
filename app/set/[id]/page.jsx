@@ -8,7 +8,11 @@ export default function Set() {
   const [set, setSet] = useState(initialCards);
   return (
     <main className="flex flex-col items-end justify-center min-h-screen bg-[#F1F1F1] pt-40">
-      <TopBar isHome={false} name={"Common French Words"} unit={"French 101"} />
+      <TopBar
+        isHome={false}
+        name={"Common French Words"}
+        collection={"French 101"}
+      />
       <ViewSet set={set} setSet={setSet} />
     </main>
   );

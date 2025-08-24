@@ -5,9 +5,10 @@ import TopBar from "@/components/TopBar";
 import FlashcardStack from "@/components/FlashcardStack";
 import { Reorder } from "framer-motion";
 
-import { units as initialUnits } from "@/data/unit";
+import { collections as initialCollections } from "@/data/collection";
 import { cards as initialCards } from "@/data/cards";
 import SetModal from "@/components/SetModal";
+import OverflowScrollContainer from "@/components/UI/OverflowScrollContainer";
 
 export default function Home() {
   const scrollContainerRef = useRef(null);
@@ -15,7 +16,7 @@ export default function Home() {
   const [indicatorLeftPercent, setIndicatorLeftPercent] = useState(0);
   const [indicatorWidthPercent, setIndicatorWidthPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [units, setUnits] = useState(initialUnits);
+  const [collections, setCollections] = useState(initialCollections);
 
   const [setModalOpen, setSetModalOpen] = useState(false);
   const [piles, setPiles] = useState({
@@ -25,14 +26,14 @@ export default function Home() {
     discard: [],
   });
 
-  const pinned = units.filter((c) => c.isPinned);
-  const unpinned = units.filter((c) => !c.isPinned);
+  const pinned = collections.filter((c) => c.isPinned);
+  const unpinned = collections.filter((c) => !c.isPinned);
 
-  const handlePin = (unit) => {
-    const newUnits = units.map((c) =>
-      c.name === unit.name ? { ...c, isPinned: !c.isPinned } : c
+  const handlePin = (collection) => {
+    const newCollections = collections.map((c) =>
+      c.name === collection.name ? { ...c, isPinned: !c.isPinned } : c
     );
-    setUnits(newUnits);
+    setCollections(newCollections);
   };
 
   useEffect(() => {
@@ -106,8 +107,8 @@ export default function Home() {
       <TopBar />
 
       <SetModal
-        setData={units[0].sets[0]}
-        unit={units[0]}
+        setData={collections[0].sets[0]}
+        collection={collections[0]}
         setModalOpen={setModalOpen}
         setSetModalOpen={setSetModalOpen}
         piles={piles}
@@ -122,30 +123,33 @@ export default function Home() {
           axis="x"
           values={pinned}
           onReorder={(newPinned) => {
-            setUnits([...newPinned, ...unpinned]);
+            setCollections([...newPinned, ...unpinned]);
           }}
           className="flex font-bold text-[#303030]"
         >
-          {pinned.map((unit, i) => (
+          {pinned.map((collection, i) => (
             <Reorder.Item
-              key={unit.name}
-              value={unit}
+              key={collection.name}
+              value={collection}
               className="flex flex-col px-10 py-32 items-left overflow-y-auto hide-scrollbar w-[560px]"
             >
-              <button className="mb-2" onClick={() => handlePin(unit)}>
+              <button className="mb-2" onClick={() => handlePin(collection)}>
                 <Pin
                   strokeWidth={3}
+                  fill="#303030"
                   size={20}
                   color={`#303030`}
                   className={`transition-all hover:scale-105 cursor-pointer ${
-                    unit.isPinned ? "opacity-100" : "opacity-20"
+                    collection.isPinned ? "opacity-100" : "opacity-20"
                   }`}
                 />
               </button>
-              <h1 className="text-4xl uppercase w-full mb-6">{unit.name}</h1>
+              <h1 className="text-4xl uppercase w-full mb-6">
+                {collection.name}
+              </h1>
               {/* Vertical scroll for column content */}
               <div className="w-full grid grid-cols-2 gap-5">
-                {unit.sets.map((set, j) => (
+                {collection.sets.map((set, j) => (
                   <button
                     key={j + set.name}
                     onClick={() => setSetModalOpen(true)}
@@ -164,30 +168,32 @@ export default function Home() {
           axis="x"
           values={unpinned}
           onReorder={(newUnpinned) => {
-            setUnits([...pinned, ...newUnpinned]);
+            setCollections([...pinned, ...newUnpinned]);
           }}
           className="flex font-bold text-[#303030]"
         >
-          {unpinned.map((unit, i) => (
+          {unpinned.map((collection, i) => (
             <Reorder.Item
-              key={unit.name}
-              value={unit}
+              key={collection.name}
+              value={collection}
               className="flex flex-col px-10 py-32 items-left overflow-y-auto hide-scrollbar w-[560px]"
             >
-              <button className="mb-2" onClick={() => handlePin(unit)}>
+              <button className="mb-2" onClick={() => handlePin(collection)}>
                 <Pin
                   strokeWidth={3}
                   size={20}
                   color={`#303030`}
                   className={`transition-opacity ${
-                    unit.isPinned ? "opacity-100" : "opacity-20"
+                    collection.isPinned ? "opacity-100" : "opacity-20"
                   }`}
                 />
               </button>
-              <h1 className="text-4xl uppercase w-full mb-6">{unit.name}</h1>
+              <h1 className="text-4xl uppercase w-full mb-6">
+                {collection.name}
+              </h1>
               {/* Vertical scroll for column content */}
               <div className="w-full grid grid-cols-2 gap-5">
-                {unit.sets.map((set, j) => (
+                {collection.sets.map((set, j) => (
                   <button
                     key={j + set.name}
                     onClick={() => setSetModalOpen(true)}
@@ -216,18 +222,22 @@ export default function Home() {
             width: `calc(${indicatorWidthPercent}% - 8px)`,
           }}
         ></div>
-        {pinned.map((unit, i) => (
-          <div key={i} className="uppercase z-30">
-            {unit.name}
+        {pinned.map((collection, i) => (
+          <div key={i} className="uppercase z-30 whitespace-nowrap">
+            {collection.name}
           </div>
         ))}
         {pinned.length > 0 && unpinned.length > 0 && (
           <div className="min-w-px rounded-full bg-[#D7D7D7] h-5 self-center z-40" />
         )}
-        {unpinned.map((unit, i) => (
-          <div key={i} className="uppercase z-30">
-            {unit.name}
-          </div>
+        {unpinned.map((collection, i) => (
+          <OverflowScrollContainer
+            key={i}
+            styleNames={`uppercase z-30 whitespace-nowrap max-w-28`}
+            maxWidth="max-w-28"
+          >
+            {collection.name}
+          </OverflowScrollContainer>
         ))}
       </div>
     </main>

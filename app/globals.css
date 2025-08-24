@@ -28,3 +28,13 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;     /* Firefox */
 }
+
+.scrolling-text {
+  white-space: nowrap;
+  animation: scroll-left 10s linear infinite;
+}
+
+@keyframes scroll-left {
+  30% { transform: translateX(00%); }
+  100% { transform: translateX(-150%); }
+}

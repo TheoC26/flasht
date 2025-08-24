@@ -298,7 +298,7 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   };
 
   return (
-    <div className="w-full max-w-[100rem] mx-auto flex justify-center items-end overflow-hidden">
+    <div className="w-full max-w-[100rem] mx-auto h-screen flex justify-center items-center pt-12 overflow-hidden">
       <div className="flex flex-col items-center mr-20 mb-5 relative">
         <CardStack pileName="main" size="md" cards={piles.main} />
         <div

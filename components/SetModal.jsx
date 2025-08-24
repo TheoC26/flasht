@@ -3,13 +3,19 @@ import Modal from "./UI/Modal";
 import ViewSet from "./ViewSet";
 import Link from "next/link";
 
-const SetModal = ({ setData, unit, setModalOpen, setSetModalOpen, piles }) => {
+const SetModal = ({
+  setData,
+  collection,
+  setModalOpen,
+  setSetModalOpen,
+  piles,
+}) => {
   const [set, setSet] = useState(piles.main);
 
   return (
     <Modal isOpen={setModalOpen} onClose={() => setSetModalOpen(false)}>
       <h2 className="font-semibold uppercase text-[#6D6D6D] text-sm">
-        {unit.name}
+        {collection.name}
       </h2>
       <h2 className="text-4xl font-semibold mb-4 uppercase">{setData.name}</h2>
       <div className="w-[808px] h-[458px] bg-[#f1f1f1] border-2 border-[#E8E8E8] flashcard-shadow-dark rounded-2xl p-5 overflow-y-scroll">

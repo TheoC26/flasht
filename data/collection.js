@@ -1,5 +1,5 @@
-// data/units.js (dummy data for units and sets)
-export const units = [
+// data/collections.js (dummy data for collections and sets)
+export const collections = [
   {
     name: "Math 6",
     isPinned: true,
@@ -50,7 +50,55 @@ export const units = [
     ],
   },
   {
-    name: "Chemistry",
+    name: "Chemistry0 Chemistry Chemistry Chemistry",
+    isPinned: false,
+    sets: [
+      { name: "Periodic Table", numberOfCards: 36 },
+      { name: "Chemical Bonding", numberOfCards: 25 },
+      { name: "Stoichiometry", numberOfCards: 28 },
+      { name: "Acids and Bases", numberOfCards: 20 },
+      { name: "Gases", numberOfCards: 18 },
+      { name: "Thermochemistry", numberOfCards: 16 },
+    ],
+  },
+  {
+    name: "Chemistry1",
+    isPinned: false,
+    sets: [
+      { name: "Periodic Table", numberOfCards: 36 },
+      { name: "Chemical Bonding", numberOfCards: 25 },
+      { name: "Stoichiometry", numberOfCards: 28 },
+      { name: "Acids and Bases", numberOfCards: 20 },
+      { name: "Gases", numberOfCards: 18 },
+      { name: "Thermochemistry", numberOfCards: 16 },
+    ],
+  },
+  {
+    name: "Chemistry2",
+    isPinned: false,
+    sets: [
+      { name: "Periodic Table", numberOfCards: 36 },
+      { name: "Chemical Bonding", numberOfCards: 25 },
+      { name: "Stoichiometry", numberOfCards: 28 },
+      { name: "Acids and Bases", numberOfCards: 20 },
+      { name: "Gases", numberOfCards: 18 },
+      { name: "Thermochemistry", numberOfCards: 16 },
+    ],
+  },
+  {
+    name: "Chemistry3",
+    isPinned: false,
+    sets: [
+      { name: "Periodic Table", numberOfCards: 36 },
+      { name: "Chemical Bonding", numberOfCards: 25 },
+      { name: "Stoichiometry", numberOfCards: 28 },
+      { name: "Acids and Bases", numberOfCards: 20 },
+      { name: "Gases", numberOfCards: 18 },
+      { name: "Thermochemistry", numberOfCards: 16 },
+    ],
+  },
+  {
+    name: "Chemistry4",
     isPinned: false,
     sets: [
       { name: "Periodic Table", numberOfCards: 36 },
