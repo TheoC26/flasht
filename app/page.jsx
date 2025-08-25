@@ -1,245 +1,206 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { Pin } from "lucide-react";
-import TopBar from "@/components/TopBar";
-import FlashcardStack from "@/components/FlashcardStack";
-import { Reorder } from "framer-motion";
 
-import { collections as initialCollections } from "@/data/collection";
-import { cards as initialCards } from "@/data/cards";
-import SetModal from "@/components/SetModal";
-import OverflowScrollContainer from "@/components/UI/OverflowScrollContainer";
+import Link from "next/link";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MAX_SMALL_CARD_STACK_HEIGHT } from "@/constants";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  const scrollContainerRef = useRef(null);
-  const bottomBarRef = useRef(null);
-  const [indicatorLeftPercent, setIndicatorLeftPercent] = useState(0);
-  const [indicatorWidthPercent, setIndicatorWidthPercent] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [collections, setCollections] = useState(initialCollections);
+import Flashcard from "@/components/Flashcard";
 
-  const [setModalOpen, setSetModalOpen] = useState(false);
+import AssessScreen from "@/components/Screens/AssessScreen";
+
+const TopBar = () => {
+  return (
+    <div className="fixed top-0 left-0 right-0 flex justify-between items-center p-8 text-[#303030] font-bold z-50 bg-gradient-to-b from-[#F1F1F1] to-[#F1F1F100]">
+      <div className="bg-white rounded-2xl flex gap-3 flashcard-shadow h-12 transition-all hover:scale-105 group">
+        <Link href="/" className="px-6 grid place-items-center">
+          Flasht
+        </Link>
+      </div>
+      <div className="bg-white rounded-2xl flex gap-3 flashcard-shadow h-12 transition-all hover:scale-105 group">
+        <Link href="#" className="px-6 grid place-items-center">
+          About
+        </Link>
+        <Link href="#" className="px-6 grid place-items-center">
+          Pricing
+        </Link>
+        <Link href="#" className="px-6 grid place-items-center">
+          Learn
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+const AssessScreenDemo = () => {
   const [piles, setPiles] = useState({
-    main: initialCards,
+    main: [
+      {
+        id: 1,
+        front: "What is the capital of France?",
+        back: "Paris",
+        index: 0,
+      },
+      { id: 2, front: "What is 2 + 2?", back: "4", index: 1 },
+      {
+        id: 3,
+        front: "What is the largest planet in our solar system?",
+        back: "Jupiter",
+        index: 2,
+      },
+    ],
     know: [],
-    dontKnow: initialCards,
+    dontKnow: [],
     discard: [],
   });
-
-  const pinned = collections.filter((c) => c.isPinned);
-  const unpinned = collections.filter((c) => !c.isPinned);
-
-  const handlePin = (collection) => {
-    const newCollections = collections.map((c) =>
-      c.name === collection.name ? { ...c, isPinned: !c.isPinned } : c
-    );
-    setCollections(newCollections);
-  };
+  const [history, setHistory] = useState([]);
+  const [round, setRound] = useState(0);
 
   useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-
-    const computeAndSet = () => {
-      const totalWidth = el.scrollWidth;
-      const viewportWidth = el.clientWidth;
-      const maxScrollable = Math.max(totalWidth - viewportWidth, 0);
-      const viewportFraction = totalWidth > 0 ? viewportWidth / totalWidth : 1;
-      const widthPct = Math.max(0, Math.min(1, viewportFraction)) * 100;
-
-      const scrollLeft = el.scrollLeft;
-      const scrollRatio = maxScrollable > 0 ? scrollLeft / maxScrollable : 0;
-      const leftPct = scrollRatio * (100 - widthPct);
-
-      setIndicatorWidthPercent(widthPct);
-      setIndicatorLeftPercent(leftPct);
-    };
-
-    computeAndSet();
-    el.addEventListener("scroll", computeAndSet, { passive: true });
-    window.addEventListener("resize", computeAndSet);
-    return () => {
-      el.removeEventListener("scroll", computeAndSet);
-      window.removeEventListener("resize", computeAndSet);
-    };
-  }, []);
-
-  // Map a pointer X position over the bottom bar to a scrollLeft on the container
-  const positionPointerToScroll = (clientX, smooth = false) => {
-    const el = scrollContainerRef.current;
-    const track = bottomBarRef.current;
-    if (!el || !track) return;
-
-    const rect = track.getBoundingClientRect();
-    const usableWidth = Math.max(rect.width - 8, 1); // mirror 4px inset on both sides
-    let x = clientX - rect.left - 4; // offset left padding/inset
-    x = Math.max(0, Math.min(usableWidth, x));
-    const ratio = x / usableWidth;
-
-    const maxScrollable = Math.max(el.scrollWidth - el.clientWidth, 0);
-    const targetLeft = ratio * maxScrollable;
-
-    if (smooth) {
-      el.scrollTo({ left: targetLeft, behavior: "smooth" });
-    } else {
-      el.scrollLeft = targetLeft;
+    console.log(round)
+    if (round == 1) {
+      redirect("/home");
     }
-  };
-
-  useEffect(() => {
-    if (!isDragging) return;
-    const handleMove = (e) => positionPointerToScroll(e.clientX, false);
-    const handleUp = (e) => {
-      setIsDragging(false);
-      window.removeEventListener("pointermove", handleMove);
-      window.removeEventListener("pointerup", handleUp);
-    };
-    window.addEventListener("pointermove", handleMove, { passive: true });
-    window.addEventListener("pointerup", handleUp, { passive: true });
-    return () => {
-      window.removeEventListener("pointermove", handleMove);
-      window.removeEventListener("pointerup", handleUp);
-    };
-  }, [isDragging]);
+  }, [round]);
 
   return (
-    <main className="flex flex-col items-end justify-center min-h-screen bg-[#F1F1F1]">
+    <AssessScreen
+      piles={piles}
+      setPiles={setPiles}
+      history={history}
+      setHistory={setHistory}
+      setRound={setRound}
+    />
+  );
+};
+
+export default function LandingPage() {
+  return (
+    <div className="bg-[#F1F1F1] min-h-screen text-[#303030]">
       <TopBar />
 
-      <SetModal
-        setData={collections[0].sets[0]}
-        collection={collections[0]}
-        setModalOpen={setModalOpen}
-        setSetModalOpen={setSetModalOpen}
-        piles={piles}
-      />
+      {/* Hero Section */}
+      <header className="text-center pt-48 pb-16">
+        <h1 className="text-6xl font-bold mb-4">Learn smarter, not harder.</h1>
+        <p className="text-xl max-w-2xl mx-auto mb-8">
+          Flasht is a minimalist flashcard app designed to help you study
+          efficiently, without the clutter.
+        </p>
+        <Link
+          href="/home"
+          className="bg-white text-[#303030] font-bold py-3 px-8 rounded-xl flashcard-shadow-dark transition-all hover:scale-105"
+        >
+          Get Started
+        </Link>
+      </header>
 
-      {/* Horizontal scroll container */}
-      <div
-        ref={scrollContainerRef}
-        className="flex gap-5 overflow-x-auto px-10 h-screen hide-scrollbar w-full"
-      >
-        <Reorder.Group
-          axis="x"
-          values={pinned}
-          onReorder={(newPinned) => {
-            setCollections([...newPinned, ...unpinned]);
-          }}
-          className="flex font-bold text-[#303030]"
-        >
-          {pinned.map((collection, i) => (
-            <Reorder.Item
-              key={collection.name}
-              value={collection}
-              className="flex flex-col px-10 py-32 items-left overflow-y-auto hide-scrollbar w-[560px]"
-            >
-              <button className="mb-2" onClick={() => handlePin(collection)}>
-                <Pin
-                  strokeWidth={3}
-                  fill="#303030"
-                  size={20}
-                  color={`#303030`}
-                  className={`transition-all hover:scale-105 cursor-pointer ${
-                    collection.isPinned ? "opacity-100" : "opacity-20"
-                  }`}
-                />
-              </button>
-              <h1 className="text-4xl uppercase w-full mb-6">
-                {collection.name}
-              </h1>
-              {/* Vertical scroll for column content */}
-              <div className="w-full grid grid-cols-2 gap-5">
-                {collection.sets.map((set, j) => (
-                  <button
-                    key={j + set.name}
-                    onClick={() => setSetModalOpen(true)}
-                  >
-                    <FlashcardStack title={set.name} />
-                  </button>
-                ))}
-              </div>
-            </Reorder.Item>
-          ))}
-        </Reorder.Group>
-        {pinned.length > 0 && unpinned.length > 0 && (
-          <div className="min-w-1 rounded-full bg-[#cbcbcb] h-1/3 self-center z-50 mx-5" />
-        )}
-        <Reorder.Group
-          axis="x"
-          values={unpinned}
-          onReorder={(newUnpinned) => {
-            setCollections([...pinned, ...newUnpinned]);
-          }}
-          className="flex font-bold text-[#303030]"
-        >
-          {unpinned.map((collection, i) => (
-            <Reorder.Item
-              key={collection.name}
-              value={collection}
-              className="flex flex-col px-10 py-32 items-left overflow-y-auto hide-scrollbar w-[560px]"
-            >
-              <button className="mb-2" onClick={() => handlePin(collection)}>
-                <Pin
-                  strokeWidth={3}
-                  size={20}
-                  color={`#303030`}
-                  className={`transition-opacity ${
-                    collection.isPinned ? "opacity-100" : "opacity-20"
-                  }`}
-                />
-              </button>
-              <h1 className="text-4xl uppercase w-full mb-6">
-                {collection.name}
-              </h1>
-              {/* Vertical scroll for column content */}
-              <div className="w-full grid grid-cols-2 gap-5">
-                {collection.sets.map((set, j) => (
-                  <button
-                    key={j + set.name}
-                    onClick={() => setSetModalOpen(true)}
-                  >
-                    <FlashcardStack title={set.name} />
-                  </button>
-                ))}
-              </div>
-            </Reorder.Item>
-          ))}
-        </Reorder.Group>
-      </div>
-      <div
-        ref={bottomBarRef}
-        className="fixed bottom-6 w-fit p-3 px-4 rounded-2xl flashcard-shadow-dark text-sm cursor-pointer transition-all hover:scale-102 flex gap-5 bg-white left-1/2 -translate-x-1/2 z-30 select-none"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          positionPointerToScroll(e.clientX, true);
-          setIsDragging(true);
-        }}
-      >
-        <div
-          className={`absolute top-1 bottom-1 bg-[#F1F1F1] outline-1 font-bold outline-[#D7D7D7] rounded-xl z-20`}
-          style={{
-            left: `calc(${indicatorLeftPercent}% + 4px)`,
-            width: `calc(${indicatorWidthPercent}% - 8px)`,
-          }}
-        ></div>
-        {pinned.map((collection, i) => (
-          <div key={i} className="uppercase z-30 whitespace-nowrap">
-            {collection.name}
+      {/* Interactive Flashcard Section */}
+      <section className="py-10">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold">See it in action</h2>
+          <p className="text-lg text-gray-600">
+            Interact with the flashcards below to see how it works.
+          </p>
+        </div>
+        <AssessScreenDemo />
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold">How It Works</h2>
+          <p className="text-lg text-gray-600">
+            A simple, research-backed process for effective learning.
+          </p>
+        </div>
+        <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-12 text-center">
+          <div className="bg-white p-8 rounded-2xl flashcard-shadow">
+            <h3 className="text-2xl font-bold mb-2">1. Create</h3>
+            <p>
+              Create your own flashcard sets on any topic you need to master.
+            </p>
           </div>
-        ))}
-        {pinned.length > 0 && unpinned.length > 0 && (
-          <div className="min-w-px rounded-full bg-[#D7D7D7] h-5 self-center z-40" />
-        )}
-        {unpinned.map((collection, i) => (
-          <OverflowScrollContainer
-            key={i}
-            styleNames={`uppercase z-30 whitespace-nowrap max-w-28`}
-            maxWidth="max-w-28"
-          >
-            {collection.name}
-          </OverflowScrollContainer>
-        ))}
-      </div>
-    </main>
+          <div className="bg-white p-8 rounded-2xl flashcard-shadow">
+            <h3 className="text-2xl font-bold mb-2">2. Assess</h3>
+            <p>
+              Quickly gauge what you know and what you don't with a simple
+              assessment.
+            </p>
+          </div>
+          <div className="bg-white p-8 rounded-2xl flashcard-shadow">
+            <h3 className="text-2xl font-bold mb-2">3. Learn</h3>
+            <p>
+              Focus your study time on the concepts you haven't mastered yet.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold mb-4">
+            Trusted by learners everywhere.
+          </h2>
+          <p className="text-xl mb-8">
+            "Flasht helped me ace my exams. The focused approach to learning is
+            a game-changer."
+          </p>
+          <p className="font-bold">- A Happy Student</p>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold">
+            Everything you need, nothing you don't.
+          </h2>
+        </div>
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10">
+          <div className="p-6">
+            <h3 className="text-2xl font-bold mb-2">Focus on Learning</h3>
+            <p>
+              No distractions, no complicated features. Just a simple tool to
+              help you learn.
+            </p>
+          </div>
+          <div className="p-6">
+            <h3 className="text-2xl font-bold mb-2">Spaced Repetition</h3>
+            <p>
+              Our learning algorithm is based on proven spaced repetition
+              techniques to maximize retention.
+            </p>
+          </div>
+          <div className="p-6">
+            <h3 className="text-2xl font-bold mb-2">Track Your Progress</h3>
+            <p>
+              See how you're improving over time and what topics need more work.
+            </p>
+          </div>
+          <div className="p-6">
+            <h3 className="text-2xl font-bold mb-2">Sync Across Devices</h3>
+            <p>Access your flashcards anywhere, anytime, on any device.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="text-center py-20">
+        <h2 className="text-4xl font-bold mb-4">Ready to start learning?</h2>
+        <Link
+          href="/home"
+          className="bg-white text-[#303030] font-bold py-4 px-10 rounded-xl flashcard-shadow-dark transition-all hover:scale-105 text-lg"
+        >
+          Create Your First Set
+        </Link>
+      </section>
+
+      {/* Footer */}
+      <footer className="text-center p-8 text-gray-500">
+        <p>&copy; 2025 Flasht. All rights reserved.</p>
+      </footer>
+    </div>
   );
 }

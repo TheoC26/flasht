@@ -12,6 +12,8 @@ export default function Flashcard({ card, size = "md", flipped = false, isShuffl
 
   const isMain = size == "md";
   const isSmall = size === "sm";
+  const isMobile = size === "mobile";
+  const isExtraSmall = size === "xs";
   const isGrid = size === "grid";
 
   const handleCardClick = (e) => {
@@ -24,6 +26,10 @@ export default function Flashcard({ card, size = "md", flipped = false, isShuffl
       className={`relative ${
         isSmall
           ? "w-[226px] h-[126px]"
+          : isExtraSmall
+          ? "w-[169.5px] h-[94.5px]"
+          : isMobile
+          ? "w-[339px] h-[189px]"
           : isGrid
           ? "w-full aspect-[1.79]"
           : "w-[585px] h-[326.667px]"
@@ -35,8 +41,12 @@ export default function Flashcard({ card, size = "md", flipped = false, isShuffl
       transition={{ duration: 0.2 }}
     >
       <div
-        className={`absolute w-full h-full bg-white border-2 border-[#F7F7F7] rounded-xl flex flashcard-shadow items-center justify-center ${
-          isSmall || isGrid ? "text-base" : "text-4xl"
+        className={`absolute w-full h-full bg-white border-2 border-[#F7F7F7] rounded-xl text-center flex flashcard-shadow items-center justify-center ${
+          isSmall || isGrid
+            ? "text-base"
+            : isExtraSmall
+            ? "text-sm"
+            : "text-4xl"
         } font-bold text-[#303030] backface-hidden`}
         style={{ transform: "rotateX(0deg)" }}
       >
@@ -52,8 +62,12 @@ export default function Flashcard({ card, size = "md", flipped = false, isShuffl
         {card.front}
       </div>
       <div
-        className={`absolute w-full h-full bg-[#F7F7F7] rounded-xl flex flashcard-shadow items-center justify-center ${
-          isSmall || isGrid ? "text-base" : "text-4xl"
+        className={`absolute w-full h-full bg-[#F7F7F7] rounded-xl flex flashcard-shadow text-center items-center justify-center ${
+          isSmall || isGrid
+            ? "text-base"
+            : isExtraSmall
+            ? "text-sm"
+            : "text-4xl"
         } font-bold text-[#303030] backface-hidden`}
         style={{ transform: "rotateX(180deg)" }}
       >

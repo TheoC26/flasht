@@ -8,6 +8,18 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   const draggedCardRef = useRef(null);
   const [flipped, setFlipped] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
 
   useEffect(() => {
     setIsShuffled(
@@ -124,6 +136,7 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
     dropZoneElements.forEach((el, i) => {
       if (!el) return;
       const rect = el.getBoundingClientRect();
+      console.log(e.clientX, rect.left)
       if (
         e.clientX > rect.left &&
         e.clientX < rect.right &&
@@ -165,6 +178,17 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
       });
     }
     draggedCardRef.current = null;
+  };
+
+  // Mobile swipe handling
+  const handleSwipe = (direction) => {
+    if (piles.main.length === 0) return;
+
+    if (direction === "left") {
+      dontKnow();
+    } else if (direction === "right") {
+      know();
+    }
   };
 
   useEffect(() => {
@@ -213,44 +237,108 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
 
   const CardStack = ({ pileName, cards, size = "md" }) => {
     const isSmall = size === "sm";
+    const isExtraSmall = size === "xs"
+    const isMainPile = pileName === "main";
+    const isDraggable = !isMobile || isMainPile;
+
+    const maxCards = isMobile
+      ? MAX_SMALL_CARD_STACK_HEIGHT/5
+      : MAX_SMALL_CARD_STACK_HEIGHT;
+
     return (
       <div
         id={`pile-${pileName}`}
         className={`card-stack relative flex items-end justify-center ${
-          isSmall ? "w-[220px] h-[126px]" : "w-[600px] h-[310px]"
+          isSmall
+            ? "w-[226px] h-[126px]"
+            : isExtraSmall
+            ? "w-[169.5px] h-[94.5px]"
+            : "w-[600px] h-[310px]"
         }`}
         style={
           isSmall
             ? {
                 marginBottom: `${
-                  cards.length <= MAX_SMALL_CARD_STACK_HEIGHT
-                    ? cards.length * 10
-                    : MAX_SMALL_CARD_STACK_HEIGHT * 10
+                  cards.length <= maxCards ? cards.length * 10 : maxCards * 10
                 }px`,
               }
             : {}
         }
       >
         <AnimatePresence>
-          {cards.slice(0, MAX_SMALL_CARD_STACK_HEIGHT).map((card, i) => (
+          {cards.slice(0, maxCards).map((card, i) => (
             <motion.div
               key={card.id}
               layoutId={card.id}
-              drag
+              drag={isDraggable}
               onDragStart={() => {
-                draggedCardRef.current = card;
+                if (isDraggable) {
+                  draggedCardRef.current = card;
+                }
               }}
               onDragEnd={(e) => {
-                setTimeout(() => (draggedCardRef.current = null), 10);
-                onCardDragEnd(e, card);
+                if (isMobile && isMainPile && i === 0) {
+                  console.log(e.pageX / window.innerWidth);
+                  // Handle swipe gestures
+                  if (e.pageX / window.innerWidth < 0.4) {
+                    handleSwipe("left");
+                    return;
+                  } else if (e.pageX / window.innerWidth > 0.6) {
+                    handleSwipe("right");
+                    return;
+                  }
+                }
+                if (isDraggable) {
+                  setTimeout(() => (draggedCardRef.current = null), 10);
+                  onCardDragEnd(e, card);
+                }
               }}
               dragMomentum={false}
-              whileDrag={{
-                scale: isSmall ? 1.1 : 0.8,
-                rotate: 3,
-                zIndex: 9999,
+              whileDrag={
+                isDraggable
+                  ? {
+                      scale: isSmall ? 1.1 : isMobile ? 0.9 : 0.8,
+                      rotate: 3,
+                      zIndex: 9999,
+                    }
+                  : {}
+              }
+              // Mobile swipe gestures for main pile cards
+              dragConstraints={
+                isMobile && isMainPile && i === 0
+                  ? { left: -200, right: 200, top: 0, bottom: 0 }
+                  : {}
+              }
+              onDrag={(event, info) => {
+                if (isMobile && isMainPile && i === 0) {
+                  // Visual feedback during swipe
+                  if (Math.abs(info.offset.x) > 100) {
+                    // Could add visual feedback here
+                  }
+                }
               }}
-              className="absolute cursor-grab active:cursor-grabbing"
+              //   onDragEnd={(event, info) => {
+              //     if (isMobile && isMainPile && i === 0) {
+              //       // Handle swipe gestures
+              //       if (info.offset.x < -100) {
+              //         handleSwipe("left");
+              //         return;
+              //       } else if (info.offset.x > 100) {
+              //         handleSwipe("right");
+              //         return;
+              //       }
+              //     }
+
+              //     if (isDraggable) {
+              //       setTimeout(() => (draggedCardRef.current = null), 10);
+              //       onCardDragEnd(event, card);
+              //     }
+              //   }}
+              className={
+                isDraggable
+                  ? "absolute cursor-grab active:cursor-grabbing"
+                  : "absolute"
+              }
               style={{
                 zIndex:
                   draggedCardRef.current?.id == card.id
@@ -264,14 +352,14 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
             >
               <Flashcard
                 card={card}
-                size={size}
+                size={isMobile && isSmall ? "mobile" : size}
                 flipped={pileName === "main" && i === 0 && flipped}
                 isShuffled={isShuffled}
                 toggleShuffle={toggleShuffle}
               />
             </motion.div>
           ))}
-          {size == "md" && (
+          {size == "md" && !isMobile && (
             <div
               className="absolute -left-12 bottom-0 w-10"
               style={{ perspective: "200px" }}
@@ -282,9 +370,9 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
                   layoutId={card.id + "mini"}
                   className="w-full absolute flashcard-shadow aspect-[1.79] bg-white rounded-sm"
                   style={{
-                    bottom: `${i * 3}px`, // increase for more visible offset
+                    bottom: `${i * 3}px`,
                     zIndex: i,
-                    transform: `rotateX(20deg)`, // slight scale for depth
+                    transform: `rotateX(20deg)`,
                     boxShadow: "0 1px 7px rgba(0,0,0,0.08)",
                   }}
                   transition={{ duration: 0.1 }}
@@ -297,6 +385,147 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
     );
   };
 
+  // Mobile layout
+  if (isMobile) {
+    return (
+      <div className="w-full h-screen flex flex-col justify-between p-4 overflow-hidden">
+        {/* Main card area */}
+        <div className="flex-1 flex flex-col items-center justify-center relative mt-24">
+          <CardStack pileName="main" size="sm" cards={piles.main} />
+
+          {/* Completion message */}
+          <div
+            className={`absolute inset-0 flex flex-col items-center justify-center text-center opacity-0 transition-opacity duration-500 ${
+              piles.main.length < 1 && "opacity-90 flex"
+            }`}
+          >
+            <h1 className="text-3xl font-bold text-[#303030] mb-2">
+              Well done!
+            </h1>
+            <h2 className="text-lg mb-4 text-[#7C7C7C]">
+              You have assessed your knowledge of{" "}
+              <span className="text-[#303030]">Common French Words</span>
+            </h2>
+            <div className="text-[#6AAD6A] text-xl mb-2">
+              You know: {piles.know.length} Cards
+            </div>
+            <div className="text-[#C98282] text-xl mb-4">
+              You are still learning: {piles.dontKnow.length} Cards
+            </div>
+            <div className="flex gap-3">
+              <button
+                disabled={piles.main.length > 0}
+                onClick={undo}
+                className="bg-white rounded-xl px-4 py-2 flashcard-shadow cursor-pointer transition-all hover:scale-105"
+              >
+                Back
+              </button>
+              <button
+                disabled={piles.main.length > 0}
+                onClick={() => setRound((prev) => prev + 1)}
+                className="bg-[#CBF2CB] outline-2 outline-[#BFEBBF] rounded-xl px-8 py-2 flashcard-shadow cursor-pointer transition-all hover:scale-105"
+              >
+                Continue &gt;
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom piles */}
+        <div className="flex justify-between gap-4 pb-20">
+          {/* Don't Know pile */}
+          <div className="flex-1 flex flex-col items-center">
+            <div className="text-sm font-bold text-[#303030] mb-4">
+              Don't Know ({piles.dontKnow.length})
+            </div>
+            <div className="w-full max-w-[120px] h-[80px] relative">
+              <div
+                id="pile-dontKnow"
+                className="absolute inset-0 flex items-end justify-center"
+              >
+                {piles.dontKnow.length > 0 ? (
+                  <CardStack
+                    pileName="dontKnow"
+                    size="xs"
+                    cards={piles.dontKnow.slice(0, 3)}
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-lg bg-[#FFCACA] border-2 border-[#F7C1C1] flex items-center justify-center text-xs text-gray-600">
+                    Don't Know
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Know pile */}
+          <div className="flex-1 flex flex-col items-center">
+            <div className="text-sm font-bold text-[#303030] mb-4">
+              Know ({piles.know.length})
+            </div>
+            <div className="w-full max-w-[120px] h-[80px] relative">
+              <div
+                id="pile-know"
+                className="absolute inset-0 flex items-end justify-center"
+              >
+                {piles.know.length > 0 ? (
+                  <CardStack
+                    pileName="know"
+                    size="xs"
+                    cards={piles.know.slice(0, 3)}
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-lg bg-[#CBF2CB] border-2 border-[#BFEBBF] flex items-center justify-center text-xs text-gray-600">
+                    Know
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Control buttons */}
+        <div
+          className={`flex gap-2 justify-center mb-26 transition-all ${
+            piles.main.length < 1 && "opacity-0"
+          }`}
+        >
+          <button
+            onClick={undo}
+            className="px-4 py-2 text-xs text-gray-600 bg-white rounded-lg flashcard-shadow transition-all cursor-pointer hover:scale-105"
+          >
+            Back
+          </button>
+          <button
+            onClick={dontKnow}
+            className="px-4 py-2 text-xs text-gray-600 bg-[#FFCACA] rounded-lg flashcard-shadow transition-all cursor-pointer hover:scale-105"
+          >
+            Don't Know
+          </button>
+          <button
+            onClick={flip}
+            className="px-4 py-2 text-xs text-gray-600 bg-white rounded-lg flashcard-shadow transition-all cursor-pointer hover:scale-105"
+          >
+            Flip
+          </button>
+          <button
+            onClick={know}
+            className="px-4 py-2 text-xs text-gray-600 bg-[#CBF2CB] rounded-lg flashcard-shadow transition-all cursor-pointer hover:scale-105"
+          >
+            Know
+          </button>
+          <button
+            onClick={skip}
+            className="px-4 py-2 text-xs text-gray-600 bg-white rounded-lg flashcard-shadow transition-all cursor-pointer hover:scale-105"
+          >
+            Skip
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop layout (original)
   return (
     <div className="w-full max-w-[100rem] mx-auto h-screen flex justify-center items-center pt-12 overflow-hidden">
       <div className="flex flex-col items-center mr-20 mb-5 relative">
