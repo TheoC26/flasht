@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { v4 as uuidv4 } from "uuid";
 import TopBar from "@/components/TopBar";
+import FlashcardInput from "@/components/FlashcardInput";
 
 import { collections as initialCollections } from "@/data/collection";
-import { cards as allCards } from "@/data/cards";
 import ListItem from "@/components/UI/ListItem";
 
 const PageScreen = () => {
@@ -11,11 +12,15 @@ const PageScreen = () => {
   const [collections, setCollections] = useState(initialCollections);
   const [collection, setCollection] = useState("");
   const [name, setName] = useState("");
-  const [cardFrontText, setCardFrontText] = useState("");
-  const [cardBackText, setCardBackText] = useState("");
+
   const [focusedCard, setFocusedCard] = useState(null);
   const [frontFontSize, setFrontFontSize] = useState(24);
   const [backFontSize, setBackFontSize] = useState(24);
+
+  const [cards, setCards] = useState([]);
+  const [currentCard, setCurrentCard] = useState(0);
+
+  const flashcardInputRef = useRef();
 
   // Refs for focusing editable divs
   const frontRef = useRef(null);
@@ -73,10 +78,38 @@ const PageScreen = () => {
     []
   );
 
+  useEffect(() => {
+    // check local state if theres already a set being made
+    // else
+    setCards([
+      {
+        id: uuidv4(),
+        index: 0,
+        front: ``,
+        back: ``,
+      },
+    ]);
+  }, []);
+
+  useEffect(() => {
+    if (cards.length > 1) {
+      setCurrentCard(cards.length - 1);
+    }
+  }, [cards.length]);
+
+  useEffect(() => {
+    if (frontRef.current) {
+      frontRef.current.innerHTML = cards[currentCard]?.front || "";
+    }
+    if (backRef.current) {
+      backRef.current.innerHTML = cards[currentCard]?.back || "";
+    }
+  }, [currentCard, cards]);
+
   // Set up resize observers for auto-scaling text
   useEffect(() => {
     const frontObserver = new ResizeObserver(() => {
-      if (cardFrontText.trim()) {
+      if (cards[currentCard]?.front.trim()) {
         adjustFontSize(
           frontContainerRef,
           frontRef,
@@ -87,7 +120,7 @@ const PageScreen = () => {
     });
 
     const backObserver = new ResizeObserver(() => {
-      if (cardBackText.trim()) {
+      if (cards[currentCard]?.back.trim()) {
         adjustFontSize(
           backContainerRef,
           backRef,
@@ -104,13 +137,7 @@ const PageScreen = () => {
       frontObserver.disconnect();
       backObserver.disconnect();
     };
-  }, [
-    cardFrontText,
-    cardBackText,
-    adjustFontSize,
-    frontFontSize,
-    backFontSize,
-  ]);
+  }, [cards, currentCard, adjustFontSize, frontFontSize, backFontSize]);
 
   // Track focus more reliably using document focus events
   useEffect(() => {
@@ -170,41 +197,66 @@ const PageScreen = () => {
     setCollectionSelectionOpen(false);
   }
 
-  const handleCardClick = (cardType) => {
-    const ref = cardType === "front" ? frontRef : backRef;
-    ref.current?.focus();
-  };
-
-  const handleCardInput = (e, cardType) => {
-    const text = e.currentTarget.textContent || "";
-    if (cardType === "front") {
-      setCardFrontText(text);
-      // Trigger font size adjustment after text change
-      setTimeout(
-        () =>
-          adjustFontSize(
-            frontContainerRef,
-            frontRef,
-            setFrontFontSize,
-            frontFontSize
-          ),
-        0
-      );
+  const handleNext = () => {
+    if (currentCard === cards.length - 1) {
+      if (cards[currentCard].front != "" && cards[currentCard].back != "") {
+        setCards([
+          ...cards,
+          {
+            id: uuidv4(),
+            index: cards.length,
+            front: "",
+            back: "",
+          },
+        ]);
+        flashcardInputRef.current.onNext();
+      }
     } else {
-      setCardBackText(text);
-      // Trigger font size adjustment after text change
-      setTimeout(
-        () =>
-          adjustFontSize(
-            backContainerRef,
-            backRef,
-            setBackFontSize,
-            backFontSize
-          ),
-        0
-      );
+      flashcardInputRef.current.setFrontText(cards[currentCard + 1].front);
+      flashcardInputRef.current.setBackText(cards[currentCard + 1].back);
+      setCurrentCard(currentCard + 1);
     }
   };
+
+  const handleBack = () => {
+    if (currentCard > 0) {
+      flashcardInputRef.current.setFrontText(cards[currentCard - 1].front);
+      flashcardInputRef.current.setBackText(cards[currentCard - 1].back);
+      setCurrentCard(currentCard - 1);
+      flashcardInputRef.current.onBack();
+    }
+  };
+
+  const handleCardClick = (index) => {
+    flashcardInputRef.current.setFrontText(cards[index].front);
+    flashcardInputRef.current.setBackText(cards[index].back);
+    document.activeElement.blur();
+    setCurrentCard(index);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault();
+          document.activeElement.blur();
+          handleBack();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          handleNext();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleBack, handleNext]);
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-[#F1F1F1]">
@@ -285,105 +337,35 @@ const PageScreen = () => {
 
       {/* Flashcard Section */}
       <div className="mt-16 w-4xl font-bold text-[#303030] text-xl">
-        <div className="mb-3">Card 1</div>
-        <div className="grid grid-cols-2 gap-3 place-items-start">
-          {/* Front Card */}
-          <div
-            ref={frontContainerRef}
-            className="w-full aspect-[1.79] rounded-2xl bg-white flashcard-shadow-dark flex items-center justify-center p-3 relative cursor-text overflow-hidden"
-            onClick={() => handleCardClick("front")}
-          >
-            <div
-              ref={frontRef}
-              className="outline-none max-w-full text-center px-1 min-h-[1.2em] w-full break-words"
-              contentEditable
-              suppressContentEditableWarning
-              onInput={(e) => handleCardInput(e, "front")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault(); // prevent newline
-                  backRef.current?.focus(); // jump to back card
-                }
-              }}
-              style={{
-                fontSize: `${frontFontSize}px`,
-                lineHeight: "1.2",
-                minHeight: "1.2em",
-                display: "block",
-                wordBreak: "break-word",
-                hyphens: "auto",
-              }}
-            />
-            {focusedCard !== "front" && !cardFrontText && (
-              <span className="absolute text-gray-400 pointer-events-none text-2xl select-none">
-                Front text
-              </span>
-            )}
-          </div>
-
-          {/* Back Card */}
-          <div
-            ref={backContainerRef}
-            className="w-full aspect-[1.79] rounded-2xl bg-white flashcard-shadow-dark flex items-center justify-center p-3 relative cursor-text overflow-hidden"
-            onClick={() => handleCardClick("back")}
-          >
-            <div
-              ref={backRef}
-              className="outline-none max-w-full text-center px-1 min-h-[1.2em] w-full break-words"
-              contentEditable
-              suppressContentEditableWarning
-              onInput={(e) => handleCardInput(e, "back")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault(); // prevent newline
-                  frontRef.current?.focus(); // jump to back card
-                }
-              }}
-              style={{
-                fontSize: `${backFontSize}px`,
-                lineHeight: "1.2",
-                minHeight: "1.2em",
-                display: "block",
-                wordBreak: "break-word",
-                hyphens: "auto",
-              }}
-            />
-            {focusedCard !== "back" && !cardBackText && (
-              <span className="absolute text-gray-400 text-2xl pointer-events-none select-none">
-                Back text
-              </span>
-            )}
-          </div>
-          <div className="flex flex-col relative">
-            <button
-              onClick={() => {}}
-              className="px-6 py-2.5 select-none text-base text-gray-600 bg-white rounded-2xl flashcard-shadow-dark transition-all cursor-pointer hover:scale-105"
-            >
-              Back
-            </button>
-            <div className="absolute -bottom-7 text-lg left-1/2 -translate-x-1/2 text-[#BFBFBF]">
-              {"<"}
-            </div>
-          </div>
-          <div className="flex flex-col relative place-self-end">
-            <button
-              onClick={() => {}}
-              className="px-6 py-2.5 select-none text-base text-gray-600 bg-white rounded-2xl flashcard-shadow-dark transition-all cursor-pointer hover:scale-105"
-            >
-              Next
-            </button>
-            <div className="absolute -bottom-7 text-lg left-1/2 -translate-x-1/2 text-[#BFBFBF]">
-              &gt;
-            </div>
-          </div>
-        </div>
+        <FlashcardInput
+          ref={flashcardInputRef}
+          onFrontChange={(text) => {
+            const newCards = [...cards];
+            newCards[currentCard].front = text;
+            setCards(newCards);
+          }}
+          onBackChange={(text) => {
+            const newCards = [...cards];
+            newCards[currentCard].back = text;
+            setCards(newCards);
+          }}
+          frontPlaceholder="Front text"
+          backPlaceholder="Back text"
+          handleBack={handleBack}
+          handleNext={handleNext}
+        />
       </div>
 
       {/* All Flashcards Section */}
       <div className="w-2xl h-96 mt-24 font-bold text-[#303030]">
         <div className="flex-col mt-3 pb-28">
-          {allCards.map((card) => (
-            <ListItem key={card.id + card.front} card={card} />
+          {cards.map((card, index) => (
+            <ListItem
+              key={card.id}
+              card={card}
+              onClick={() => handleCardClick(index)}
+              current={currentCard === index}
+            />
           ))}
         </div>
       </div>
