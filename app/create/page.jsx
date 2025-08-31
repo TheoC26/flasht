@@ -21,6 +21,10 @@ const PageScreen = () => {
   const [cards, setCards] = useState([]);
   const [currentCard, setCurrentCard] = useState(0);
 
+  // AI suggestion state
+  const [aiSuggestions, setAiSuggestions] = useState({});
+  const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
+
   const flashcardInputRef = useRef();
 
   // Refs for focusing editable divs
@@ -28,6 +32,73 @@ const PageScreen = () => {
   const backRef = useRef(null);
   const frontContainerRef = useRef(null);
   const backContainerRef = useRef(null);
+
+  // Debounce timer for AI suggestions
+  const suggestionTimerRef = useRef(null);
+
+  // Function to generate AI suggestion for flashcard back
+  const generateAISuggestion = useCallback(
+    async (frontText) => {
+      if (!frontText.trim()) return;
+
+      setIsGeneratingSuggestion(true);
+      try {
+        const response = await fetch("/api/generate-suggestion", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ frontText }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const suggestion = data.suggestion;
+
+          setAiSuggestions((prev) => ({
+            ...prev,
+            [cards[currentCard].id]: suggestion,
+          }));
+        }
+      } catch (error) {
+        console.error("Error generating AI suggestion:", error);
+      } finally {
+        setIsGeneratingSuggestion(false);
+      }
+    },
+    [currentCard, cards]
+  );
+
+  // Debounced function to call AI suggestion
+  const debouncedGenerateSuggestion = useCallback(
+    (frontText) => {
+      if (suggestionTimerRef.current) {
+        clearTimeout(suggestionTimerRef.current);
+      }
+
+      suggestionTimerRef.current = setTimeout(() => {
+        generateAISuggestion(frontText);
+      }, 200); // .1 second debounce
+    },
+    [generateAISuggestion]
+  );
+
+  // Function to auto-fill back card with suggestion
+  const autoFillWithSuggestion = useCallback(() => {
+    const currentCardId = cards[currentCard]?.id;
+    const suggestion = aiSuggestions[currentCardId];
+
+    if (suggestion) {
+      const newCards = [...cards];
+      newCards[currentCard].back = suggestion;
+      setCards(newCards);
+
+      // Update the flashcard input component
+      if (flashcardInputRef.current) {
+        flashcardInputRef.current.setBackText(suggestion);
+      }
+    }
+  }, [cards, currentCard, aiSuggestions]);
 
   // Auto-resize text to fit container
   const adjustFontSize = useCallback(
@@ -201,16 +272,24 @@ const PageScreen = () => {
   const handleNext = () => {
     if (currentCard === cards.length - 1) {
       if (cards[currentCard].front != "" && cards[currentCard].back != "") {
+        const newCardId = uuidv4();
         setCards([
           ...cards,
           {
-            id: uuidv4(),
+            id: newCardId,
             index: cards.length,
             front: "",
             back: "",
           },
         ]);
         flashcardInputRef.current.onNext();
+
+        // Clear AI suggestion for the new card
+        setAiSuggestions((prev) => {
+          const newSuggestions = { ...prev };
+          delete newSuggestions[newCardId];
+          return newSuggestions;
+        });
       }
     } else {
       flashcardInputRef.current.setFrontText(cards[currentCard + 1].front);
@@ -231,8 +310,16 @@ const PageScreen = () => {
   const handleCardClick = (index) => {
     flashcardInputRef.current.setFrontText(cards[index].front);
     flashcardInputRef.current.setBackText(cards[index].back);
+    flashcardInputRef.current.setFrontFocusedState(cards[index].front || cards[index].front.trim() !== "");
     document.activeElement.blur();
     setCurrentCard(index);
+
+    // Clear any existing AI suggestions when switching cards
+    setAiSuggestions((prev) => {
+      const newSuggestions = { ...prev };
+      // Keep suggestions for all cards, just ensure current card has latest
+      return newSuggestions;
+    });
   };
 
   useEffect(() => {
@@ -258,6 +345,15 @@ const PageScreen = () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [handleBack, handleNext]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (suggestionTimerRef.current) {
+        clearTimeout(suggestionTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-[#F1F1F1]">
@@ -344,6 +440,9 @@ const PageScreen = () => {
             const newCards = [...cards];
             newCards[currentCard].front = text;
             setCards(newCards);
+
+            // Trigger AI suggestion generation
+            debouncedGenerateSuggestion(text);
           }}
           onBackChange={(text) => {
             const newCards = [...cards];
@@ -354,6 +453,9 @@ const PageScreen = () => {
           backPlaceholder="Back text"
           handleBack={handleBack}
           handleNext={handleNext}
+          aiSuggestion={aiSuggestions[cards[currentCard]?.id]}
+          isGeneratingSuggestion={isGeneratingSuggestion}
+          onAutoFillSuggestion={autoFillWithSuggestion}
         />
       </div>
 

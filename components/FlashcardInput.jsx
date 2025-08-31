@@ -19,18 +19,24 @@ const FlashcardInput = forwardRef(
       className = "",
       handleBack,
       handleNext,
+      aiSuggestion = "",
+      isGeneratingSuggestion = false,
+      onAutoFillSuggestion,
     },
     ref
   ) => {
     const [frontFontSize, setFrontFontSize] = useState(24);
     const [backFontSize, setBackFontSize] = useState(24);
+    const [isFrontFocused, setIsFrontFocused] = useState(false);
+    const [isBackEmpty, setIsBackEmpty] = useState(true);
 
     const frontRef = useRef(null);
     const backRef = useRef(null);
     const frontContainerRef = useRef(null);
     const backContainerRef = useRef(null);
 
-    // Auto-resize text to fit container
+    const isContentEmpty = (text) => !text || text.trim() === "";
+
     const adjustFontSize = useCallback(
       (containerRef, textRef, setFontSize, currentFontSize) => {
         if (!containerRef.current || !textRef.current) return;
@@ -76,93 +82,55 @@ const FlashcardInput = forwardRef(
       []
     );
 
-    // Expose functions to parent
     useImperativeHandle(ref, () => ({
       setFrontText: (text) => {
         if (frontRef.current) {
-          if (text) {
-            frontRef.current.textContent = text;
-            frontRef.current.classList.remove("text-gray-400");
-            frontRef.current.classList.add("text-[#303030]");
-            // onFrontChange?.(text);
-            adjustFontSize(
-              frontContainerRef,
-              frontRef,
-              setFrontFontSize,
-              frontFontSize
-            );
-          } else {
-            frontRef.current.textContent = frontPlaceholder;
-            frontRef.current.classList.add("text-gray-400");
-            frontRef.current.classList.remove("text-[#303030]");
-          }
+          frontRef.current.textContent = text;
+          adjustFontSize(
+            frontContainerRef,
+            frontRef,
+            setFrontFontSize,
+            frontFontSize
+          );
         }
       },
       setBackText: (text) => {
         if (backRef.current) {
-          if (text) {
-            backRef.current.textContent = text;
-            backRef.current.classList.remove("text-gray-400");
-            backRef.current.classList.add("text-[#303030]");
-            // onBackChange?.(text);
-            adjustFontSize(
-              backContainerRef,
-              backRef,
-              setBackFontSize,
-              backFontSize
-            );
-          } else {
-            backRef.current.textContent = backPlaceholder;
-            backRef.current.classList.add("text-gray-400");
-            backRef.current.classList.remove("text-[#303030]");
-          }
+          backRef.current.textContent = text;
+          setIsBackEmpty(isContentEmpty(text));
+          adjustFontSize(
+            backContainerRef,
+            backRef,
+            setBackFontSize,
+            backFontSize
+          );
         }
       },
       onNext: () => {
-        backRef.current.innerHTML = "";
-        frontRef.current.innerHTML = "";
+        if (backRef.current) backRef.current.innerHTML = "";
+        if (frontRef.current) frontRef.current.innerHTML = "";
+        setIsBackEmpty(true);
         frontRef.current.focus();
-        handleBackBlur();
-        handleFrontFocus();
       },
-      onBack: () => {
-        handleBackBlur();
-        handleFrontBlur();
+      onBack: () => {},
+      setFrontFocusedState: (state) => {
+        setIsFrontFocused(state)
       }
     }));
 
-    // Update content when props change
     useEffect(() => {
-        console.log("hello");
-      if (frontRef.current) {
-        if (frontText) {
-            console.log("hello")
-          frontRef.current.textContent = frontText;
-          frontRef.current.classList.remove("text-gray-400");
-          frontRef.current.classList.add("text-[#303030]");
-        } else {
-          frontRef.current.textContent = frontPlaceholder;
-          frontRef.current.classList.add("text-gray-400");
-          frontRef.current.classList.remove("text-[#303030]");
-        }
+      if (frontRef.current && frontRef.current.textContent !== frontText) {
+        frontRef.current.textContent = frontText;
       }
-    }, [frontText, frontPlaceholder]);
+    }, [frontText]);
 
     useEffect(() => {
-      if (backRef.current) {
-        if (backText) {
-          backRef.current.textContent = backText;
-          backRef.current.classList.remove("text-gray-400");
-          backRef.current.classList.add("text-[#303030]");
-        } else {
-          backRef.current.textContent = backPlaceholder;
-          backRef.current.classList.add("text-gray-400");
-          backRef.current.classList.remove("text-[#303030]");
-        }
+      if (backRef.current && backRef.current.textContent !== backText) {
+        backRef.current.textContent = backText;
       }
-    }, [backText, backPlaceholder]);
+      setIsBackEmpty(isContentEmpty(backText));
+    }, [backText]);
 
-    // Resize observers
     useEffect(() => {
       const frontObserver = new ResizeObserver(() => {
         if (frontText?.trim()) {
@@ -195,71 +163,32 @@ const FlashcardInput = forwardRef(
       };
     }, [frontText, backText, adjustFontSize, frontFontSize, backFontSize]);
 
-    // Input handlers
     const handleFrontInput = (e) => {
-      const text = e.target.textContent || "";
-      onFrontChange?.(text);
-      if (text.trim()) {
-        setTimeout(() => {
-          adjustFontSize(
-            frontContainerRef,
-            frontRef,
-            setFrontFontSize,
-            frontFontSize
-          );
-        }, 0);
-      }
+      onFrontChange?.(e.target.textContent || "");
     };
 
     const handleBackInput = (e) => {
-      const text = e.target.textContent || "";
-      onBackChange?.(text);
-      if (text.trim()) {
-        setTimeout(() => {
-          adjustFontSize(
-            backContainerRef,
-            backRef,
-            setBackFontSize,
-            backFontSize
-          );
-        }, 0);
+      const newText = e.target.textContent || "";
+      onBackChange?.(newText);
+      setIsBackEmpty(isContentEmpty(newText));
+    };
+
+    const handleBackKeyDown = (e) => {
+      if ((e.key === "Enter" || e.key === "Tab") && isBackEmpty && aiSuggestion) {
+        e.preventDefault();
+        onAutoFillSuggestion?.();
+      } else if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleNext();
       }
     };
 
-    // Placeholder logic
-    const handleFrontFocus = () => {
-      if (
-        frontRef.current &&
-        frontRef.current.textContent === frontPlaceholder
-      ) {
-        frontRef.current.textContent = "";
-        frontRef.current.classList.remove("text-gray-400");
-        frontRef.current.classList.add("text-[#303030]");
-      }
-    };
-
-    const handleFrontBlur = () => {
-      if (frontRef.current && frontRef.current.textContent.trim() === "") {
-        frontRef.current.textContent = frontPlaceholder;
-        frontRef.current.classList.add("text-gray-400");
-        frontRef.current.classList.remove("text-[#303030]");
-      }
-    };
-
-    const handleBackFocus = () => {
-      if (backRef.current && backRef.current.textContent === backPlaceholder) {
-        backRef.current.textContent = "";
-        backRef.current.classList.remove("text-gray-400");
-        backRef.current.classList.add("text-[#303030]");
-      }
-    };
-
-    const handleBackBlur = () => {
-      if (backRef.current && backRef.current.textContent.trim() === "") {
-        backRef.current.textContent = backPlaceholder;
-        backRef.current.classList.add("text-gray-400");
-        backRef.current.classList.remove("text-[#303030]");
-      }
+    const commonStyle = {
+      lineHeight: "1.2",
+      minHeight: "1.2em",
+      display: "block",
+      wordBreak: "break-word",
+      hyphens: "auto",
     };
 
     return (
@@ -268,64 +197,70 @@ const FlashcardInput = forwardRef(
         <div
           ref={frontContainerRef}
           className="w-full aspect-[1.79] rounded-2xl bg-white flashcard-shadow-dark flex items-center justify-center p-3 relative cursor-text overflow-hidden"
+          onClick={() => frontRef.current?.focus()}
         >
+          {isContentEmpty(frontText) && !isFrontFocused && (
+            <div
+              className="absolute text-center px-4 text-gray-400 pointer-events-none"
+              style={{ fontSize: `${frontFontSize}px`, ...commonStyle }}
+            >
+              {frontPlaceholder}
+            </div>
+          )}
           <div
             ref={frontRef}
-            className="outline-none max-w-full text-center px-1 min-h-[1.2em] w-full break-words text-gray-400"
+            className="outline-none max-w-full text-center px-1 w-full break-words text-[#303030] relative z-10 bg-transparent"
             contentEditable
             suppressContentEditableWarning
             onInput={handleFrontInput}
-            onFocus={handleFrontFocus}
-            onBlur={handleFrontBlur}
+            onFocus={() => setIsFrontFocused(true)}
+            onBlur={() => {
+              isContentEmpty(frontRef.current.innerHTML) &&
+                setIsFrontFocused(false);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 backRef.current?.focus();
               }
             }}
-            style={{
-              fontSize: `${frontFontSize}px`,
-              lineHeight: "1.2",
-              minHeight: "1.2em",
-              display: "block",
-              wordBreak: "break-word",
-              hyphens: "auto",
-            }}
-          >
-            {frontPlaceholder}
-          </div>
+            style={{ fontSize: `${frontFontSize}px`, ...commonStyle }}
+          />
         </div>
 
         {/* Back Card */}
         <div
           ref={backContainerRef}
           className="w-full aspect-[1.79] rounded-2xl bg-white flashcard-shadow-dark flex items-center justify-center p-3 relative cursor-text overflow-hidden"
+          onClick={() => backRef.current?.focus()}
         >
+          {isBackEmpty && (
+            <div
+              className="absolute text-center px-4 text-gray-400 pointer-events-none"
+              style={{ fontSize: `${backFontSize}px`, ...commonStyle }}
+            >
+              {aiSuggestion || backPlaceholder}
+            </div>
+          )}
           <div
             ref={backRef}
-            className="outline-none max-w-full text-center px-1 min-h-[1.2em] w-full break-words text-gray-400"
+            className="outline-none max-w-full text-center px-1 w-full break-words text-[#303030] relative z-10 bg-transparent"
             contentEditable
             suppressContentEditableWarning
             onInput={handleBackInput}
-            onFocus={handleBackFocus}
-            onBlur={handleBackBlur}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleNext();
-              }
-            }}
-            style={{
-              fontSize: `${backFontSize}px`,
-              lineHeight: "1.2",
-              minHeight: "1.2em",
-              display: "block",
-              wordBreak: "break-word",
-              hyphens: "auto",
-            }}
-          >
-            {backPlaceholder}
-          </div>
+            onKeyDown={handleBackKeyDown}
+            style={{ fontSize: `${backFontSize}px`, ...commonStyle }}
+          />
+          {/* {isGeneratingSuggestion && (
+            <div className="absolute top-2 right-2 text-xs text-blue-500 animate-pulse">
+              AI thinking...
+            </div>
+          )} */}
+          {!isGeneratingSuggestion && aiSuggestion && isBackEmpty && (
+            <div className="absolute top-2 right-2 text-xs text-gray-400">
+              Press Enter of Tab to accept
+            </div>
+          )}
         </div>
 
         {/* Back Button */}
@@ -344,9 +279,7 @@ const FlashcardInput = forwardRef(
         {/* Next Button */}
         <div className="flex flex-col relative place-self-end">
           <button
-            onClick={() => {
-              handleNext();
-            }}
+            onClick={handleNext}
             className="px-6 py-2.5 select-none text-base text-gray-600 bg-white rounded-2xl flashcard-shadow-dark transition-all cursor-pointer hover:scale-105"
           >
             Next
