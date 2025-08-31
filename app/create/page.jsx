@@ -6,6 +6,7 @@ import FlashcardInput from "@/components/FlashcardInput";
 
 import { collections as initialCollections } from "@/data/collection";
 import ListItem from "@/components/UI/ListItem";
+import withAuth from "@/utils/withAuth";
 
 const PageScreen = () => {
   const [collectionSelectionOpen, setCollectionSelectionOpen] = useState(false);
@@ -373,4 +374,4 @@ const PageScreen = () => {
   );
 };
 
-export default PageScreen;
+export default withAuth(PageScreen);

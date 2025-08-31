@@ -1,3 +1,4 @@
+
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Pin } from "lucide-react";
@@ -9,8 +10,9 @@ import { collections as initialCollections } from "@/data/collection";
 import { cards as initialCards } from "@/data/cards";
 import SetModal from "@/components/SetModal";
 import OverflowScrollContainer from "@/components/UI/OverflowScrollContainer";
+import withAuth from "@/utils/withAuth";
 
-export default function Home() {
+function Home() {
   const scrollContainerRef = useRef(null);
   const bottomBarRef = useRef(null);
   const [indicatorLeftPercent, setIndicatorLeftPercent] = useState(0);
@@ -243,3 +245,6 @@ export default function Home() {
     </main>
   );
 }
+
+export default withAuth(Home);
+

@@ -1,3 +1,4 @@
+import { logout } from "@/utils/auth";
 import { Cog } from "lucide-react";
 import Link from "next/link";
 import React from "react";
@@ -7,7 +8,7 @@ const TopBar = ({ name, collection, isHome = true }) => {
     <div className="fixed top-0 left-0 right-0 flex justify-between p-8 text-[#303030] font-bold z-50 bg-gradient-to-b from-[#F1F1F1] to-[#F1F1F100]">
       <div className="bg-white rounded-2xl flex gap-3 flashcard-shadow h-12 transition-all hover:scale-105 group">
         <Link
-          href={"/"}
+          href={"/home"}
           className="bg-[#F1F1F1] outline-1 group-hover:scale-[0.952380952] outline-[#D7D7D7] m-1.5 mr-0 flashcard-shadow rounded-xl px-3 grid place-items-center transition-all hover:scale-105"
         >
           My cards
@@ -33,9 +34,9 @@ const TopBar = ({ name, collection, isHome = true }) => {
           {!isHome && collection}
         </div>
       </div>
-      <div className="bg-white cursor-pointer rounded-2xl flashcard-shadow grid place-items-center px-6 transition-all hover:scale-105">
+      <button onClick={logout} className="bg-white cursor-pointer rounded-2xl flashcard-shadow grid place-items-center px-6 transition-all hover:scale-105">
         Profile
-      </div>
+      </button>
     </div>
   );
 };
