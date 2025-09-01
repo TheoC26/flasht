@@ -55,7 +55,7 @@ export async function POST(request) {
           {
             role: "system",
             content:
-              "You are a helpful assistant that creates simple, concise answers for flashcards. Provide clear, direct answers that would appear on the back of a flashcard. Keep responses brief and educational. Do not include periods at the end. Do not wrap the entire answer with quotations.",
+              "You are a helpful assistant that creates simple, concise answers for flashcards. Provide clear, direct answers that would appear on the back of a flashcard. Keep responses brief and educational. Do not include periods at the end. Do not wrap the entire answer with quotations. If there does not seem to be a clear answer or definition to the front card, return an empty string.",
           },
           {
             role: "user",

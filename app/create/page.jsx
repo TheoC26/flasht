@@ -3,15 +3,21 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import TopBar from "@/components/TopBar";
 import FlashcardInput from "@/components/FlashcardInput";
-
-import { collections as initialCollections } from "@/data/collection";
 import ListItem from "@/components/UI/ListItem";
 import withAuth from "@/utils/withAuth";
+import { useUser } from "@/utils/hooks/useUser";
+import { useFlashcards } from "@/utils/hooks/useFlashcards";
+import { useRouter } from "next/navigation";
 
 const PageScreen = () => {
+  const { user } = useUser();
+  const { getCollections, createSet, createCollection } = useFlashcards();
+  const router = useRouter();
+
   const [collectionSelectionOpen, setCollectionSelectionOpen] = useState(false);
-  const [collections, setCollections] = useState(initialCollections);
-  const [collection, setCollection] = useState("");
+  const [collections, setCollections] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState(null);
+  const [collectionName, setCollectionName] = useState("");
   const [name, setName] = useState("");
 
   const [focusedCard, setFocusedCard] = useState(null);
@@ -36,6 +42,60 @@ const PageScreen = () => {
   // Debounce timer for AI suggestions
   const suggestionTimerRef = useRef(null);
 
+  useEffect(() => {
+    if (user) {
+      const fetchCollections = async () => {
+        const userCollections = await getCollections(user.id);
+        if (userCollections) {
+          setCollections(userCollections);
+        }
+      };
+      fetchCollections();
+    }
+  }, [user]);
+
+  const handleCreateSet = async () => {
+    if (!name.trim()) {
+      alert("Please enter a name for the set.");
+      return;
+    }
+    if (!selectedCollection) {
+      alert("Please select a collection.");
+      return;
+    }
+    if (cards.some((card) => !card.front.trim() || !card.back.trim())) {
+      alert("Please make sure all flashcards have a front and back.");
+      return;
+    }
+
+    if (user) {
+      console.log(selectedCollection)
+      const newSet = await createSet(
+        name,
+        selectedCollection.id,
+        cards,
+        user.id
+      );
+      if (newSet) {
+        alert("Set created successfully!");
+        // router.push(`/set/${newSet.id}`);
+      } else {
+        alert("Failed to create set.");
+      }
+    }
+  };
+
+  const handleCreateCollection = async () => {
+    if (collectionName.trim() && user) {
+      const newCollection = await createCollection(collectionName, user.id);
+      if (newCollection) {
+        setCollections([...collections, newCollection]);
+        setSelectedCollection(newCollection);
+        setCollectionSelectionOpen(true);
+      }
+    }
+  };
+
   // Function to generate AI suggestion for flashcard back
   const generateAISuggestion = useCallback(
     async (frontText) => {
@@ -44,13 +104,14 @@ const PageScreen = () => {
           ...prev,
           [cards[currentCard].id]: "",
         }));
-        return;}
+        return;
+      }
 
       setIsGeneratingSuggestion(true);
       try {
         const payload = {
           title: name,
-          collection: collection,
+          collection: selectedCollection?.name || "",
           cards: cards,
           currentCardIndex: currentCard,
         };
@@ -78,7 +139,7 @@ const PageScreen = () => {
         setIsGeneratingSuggestion(false);
       }
     },
-    [cards, currentCard, name, collection]
+    [cards, currentCard, name, selectedCollection]
   );
 
   // Debounced function to call AI suggestion
@@ -259,25 +320,28 @@ const PageScreen = () => {
 
   function collectionBlur() {
     const match = collections.find((col) =>
-      collection
-        ? col.name.toLowerCase().includes(collection.toLowerCase())
+      collectionName
+        ? col.name.toLowerCase().includes(collectionName.toLowerCase())
         : true
     );
-    if (!match || collection == "") {
-      setCollection("");
+    if (!match || collectionName == "") {
+      setCollectionName("");
+      setSelectedCollection(null);
     } else {
-      setCollection(match.name);
+      setCollectionName(match.name);
+      setSelectedCollection(match);
     }
   }
 
   function collectionSubmit() {
     const match = collections.find((col) =>
-      collection
-        ? col.name.toLowerCase().includes(collection.toLowerCase())
+      collectionName
+        ? col.name.toLowerCase().includes(collectionName.toLowerCase())
         : true
     );
     if (!match) return;
-    setCollection(match.name);
+    setCollectionName(match.name);
+    setSelectedCollection(match);
     setCollectionSelectionOpen(false);
   }
 
@@ -322,7 +386,9 @@ const PageScreen = () => {
   const handleCardClick = (index) => {
     flashcardInputRef.current.setFrontText(cards[index].front);
     flashcardInputRef.current.setBackText(cards[index].back);
-    flashcardInputRef.current.setFrontFocusedState(cards[index].front || cards[index].front.trim() !== "");
+    flashcardInputRef.current.setFrontFocusedState(
+      cards[index].front || cards[index].front.trim() !== ""
+    );
     document.activeElement.blur();
     setCurrentCard(index);
 
@@ -388,14 +454,14 @@ const PageScreen = () => {
         />
         <div
           className={`bg-white flex justify-between w-50 flashcard-shadow-dark rounded-2xl text-xl font-bold outline-none p-2 px-3 relative ${
-            !collection && "text-[#979797]"
+            !selectedCollection && "text-[#979797]"
           }`}
         >
           <input
             className="w-40 outline-none"
             placeholder="Collection"
-            value={collection}
-            onChange={(e) => setCollection(e.target.value)}
+            value={collectionName}
+            onChange={(e) => setCollectionName(e.target.value)}
             onFocus={() => setCollectionSelectionOpen(true)}
             onKeyDown={(e) => e.key == "Enter" && collectionSubmit()}
           />
@@ -414,14 +480,15 @@ const PageScreen = () => {
             <div className="absolute z-30 text-[#303030] flashcard-shadow-dark left-1/2 -translate-x-1/2 top-12 rounded-2xl w-50 max-h-50 overflow-y-scroll p-2 pb-1 bg-white">
               {collections
                 .filter((col) =>
-                  collection
-                    ? col.name.toLowerCase().includes(collection.toLowerCase())
+                  collectionName
+                    ? col.name.toLowerCase().includes(collectionName.toLowerCase())
                     : true
                 )
                 .map((col, i) => (
                   <button
                     onClick={(e) => {
-                      setCollection(col.name);
+                      setSelectedCollection(col);
+                      setCollectionName(col.name);
                       setCollectionSelectionOpen(false);
                     }}
                     key={i}
@@ -435,6 +502,7 @@ const PageScreen = () => {
                   </button>
                 ))}
               <button
+                onClick={handleCreateCollection}
                 className={`p-1 mt-1 w-full rounded-xl text-center transition-all cursor-pointer line-clamp-2 border-2 border-[#D7D7D7] bg-[#f1f1f1] flashcard-shadow-dark hover:scale-102`}
               >
                 Create new +
@@ -472,8 +540,8 @@ const PageScreen = () => {
       </div>
 
       {/* All Flashcards Section */}
-      <div className="w-2xl h-96 mt-24 font-bold text-[#303030]">
-        <div className="flex-col mt-3 pb-28">
+      <div className="w-2xl mt-24 font-bold text-[#303030]">
+        <div className="flex-col mt-3 pb-6">
           {cards.map((card, index) => (
             <ListItem
               key={card.id}
@@ -482,6 +550,14 @@ const PageScreen = () => {
               current={currentCard === index}
             />
           ))}
+          <div className="w-full flex justify-center mt-6">
+            <button
+              onClick={handleCreateSet}
+              className="mb-28 bg-white px-6 py-3 rounded-2xl flashcard-shadow cursor-pointer transition-all hover:scale-105 hover:bg-[#CBF2CB]"
+            >
+              Create set!
+            </button>
+          </div>
         </div>
       </div>
     </div>
