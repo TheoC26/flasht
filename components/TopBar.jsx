@@ -30,7 +30,7 @@ const TopBar = ({ name, collection, isHome = true }) => {
             <Cog size={20} strokeWidth={2.5} color="#303030" />
           </button>
         )}
-        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-sm">
+        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-sm w-[300%] text-center line-clamp-1">
           {!isHome && collection}
         </div>
       </div>

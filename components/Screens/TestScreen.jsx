@@ -6,7 +6,7 @@ import Flashcard from "@/components/Flashcard";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 
-const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
+const TestScreen = ({ piles, setPiles, history, setHistory, setRound, restart }) => {
   const draggedCardRef = useRef(null);
   const [flipped, setFlipped] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
@@ -356,7 +356,7 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
             {piles.discard.length == 0 ? (
               <>
                 <button
-                  onClick={undo}
+                  onClick={restart}
                   className="bg-white rounded-2xl p-2 px-4 flashcard-shadow cursor-pointer transition-all hover:scale-105"
                 >
                   Restart

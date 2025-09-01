@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import TopBar from "@/components/TopBar";
 import BottomBar from "@/components/BottomBar";
 import AssessScreen from "@/components/Screens/AssessScreen";
@@ -33,6 +33,7 @@ export default function Learn() {
 
   const [progress, setProgress] = useState(null);
   const [setInfo, setSetInfo] = useState(null);
+  const [allCards, setAllCards] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [piles, setPiles] = useState(null);
@@ -43,21 +44,46 @@ export default function Learn() {
   const debouncedHistory = useDebounce(history, 1000);
   const debouncedRound = useDebounce(round, 1000);
 
+  const restartProgress = (cards = allCards) => {
+    console.log(cards);
+    if (!cards || cards.length === 0) return;
+    setPiles({
+      main: cards,
+      know: [],
+      dontKnow: [],
+      discard: [],
+    });
+    setHistory([]);
+    setRound(0);
+  }
+
   useEffect(() => {
     const fetchProgress = async () => {
       if (user && setId) {
         setLoading(true);
         const userProgress = await getUserProgress(setId, user.id);
         const setData = await getSet(setId);
-        if (userProgress && setData) {
+        
+        if (userProgress && setData && setData.cards) {
+          setAllCards(setData.cards);
           setProgress(userProgress);
-          setPiles(userProgress.piles);
-          setHistory(userProgress.history);
-          setRound(userProgress.round);
           setSetInfo(setData.info);
+
+          const totalCards = setData.cards.length;
+          const knownCards = userProgress.piles.know?.length || 0;
+
+          if (totalCards > 0 && totalCards === knownCards) {
+            restartProgress(setData.cards);
+          } else {
+            setPiles(userProgress.piles);
+            setHistory(userProgress.history);
+            setRound(userProgress.round);
+          }
+
         } else {
           // Handle error or not found case
         }
+        console.log(true)
         setLoading(false);
       }
     };
@@ -166,6 +192,7 @@ export default function Learn() {
             history={history}
             setHistory={setHistory}
             setRound={setRound}
+            restart={restartProgress}
           />
         )
       )}
