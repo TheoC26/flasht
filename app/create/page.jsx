@@ -39,16 +39,28 @@ const PageScreen = () => {
   // Function to generate AI suggestion for flashcard back
   const generateAISuggestion = useCallback(
     async (frontText) => {
-      if (!frontText.trim()) return;
+      if (!frontText.trim()) {
+        setAiSuggestions((prev) => ({
+          ...prev,
+          [cards[currentCard].id]: "",
+        }));
+        return;}
 
       setIsGeneratingSuggestion(true);
       try {
+        const payload = {
+          title: name,
+          collection: collection,
+          cards: cards,
+          currentCardIndex: currentCard,
+        };
+
         const response = await fetch("/api/generate-suggestion", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ frontText }),
+          body: JSON.stringify(payload),
         });
 
         if (response.ok) {
@@ -66,7 +78,7 @@ const PageScreen = () => {
         setIsGeneratingSuggestion(false);
       }
     },
-    [currentCard, cards]
+    [cards, currentCard, name, collection]
   );
 
   // Debounced function to call AI suggestion

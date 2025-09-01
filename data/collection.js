@@ -38,7 +38,7 @@ export const collections = [
     ],
   },
   {
-    name: "Spanish I",
+    name: "French I",
     isPinned: false,
     sets: [
       { name: "Basics and Greetings", numberOfCards: 20 },

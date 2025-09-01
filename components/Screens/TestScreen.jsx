@@ -4,11 +4,44 @@ import { MAX_SMALL_CARD_STACK_HEIGHT } from "@/constants";
 
 import Flashcard from "@/components/Flashcard";
 import Link from "next/link";
+import confetti from "canvas-confetti";
 
 const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   const draggedCardRef = useRef(null);
   const [flipped, setFlipped] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
+
+  // CONFETTITTTIII
+  function makeConfetti() {
+    var duration = 1.5 * 1000;
+    var animationEnd = Date.now() + duration;
+    var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+    function randomInRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    var interval = setInterval(function () {
+      var timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      var particleCount = 50 * (timeLeft / duration);
+      // since particles fall down, start a bit higher than random
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+      });
+    }, 250);
+  }
 
   useEffect(() => {
     setIsShuffled(
@@ -66,6 +99,7 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   };
 
   const know = () => {
+    if (piles.dontKnow.length === 1) makeConfetti();
     if (piles.dontKnow.length === 0) return;
     const card = piles.dontKnow[0];
     setHistory([...history, { cardId: card.id, from: "dontKnow", to: "know" }]);
@@ -328,7 +362,7 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
                   Restart
                 </button>
                 <Link
-                  href={"/"}
+                  href={"/home"}
                   className="bg-[#CBF2CB] outline-2 outline-[#BFEBBF] rounded-2xl p-2 px-12 flashcard-shadow cursor-pointer transition-all hover:scale-105"
                 >
                   Go home &gt;
