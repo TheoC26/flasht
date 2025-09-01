@@ -78,7 +78,7 @@ const PageScreen = () => {
       );
       if (newSet) {
         alert("Set created successfully!");
-        // router.push(`/set/${newSet.id}`);
+        router.push(`/set/${newSet.id}`);
       } else {
         alert("Failed to create set.");
       }
