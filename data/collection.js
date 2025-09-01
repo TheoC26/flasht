@@ -2,7 +2,7 @@
 export const collections = [
   {
     name: "Math 6",
-    isPinned: true,
+    pinned: true,
     sets: [
       { name: "Fractions", numberOfCards: 24 },
       { name: "Decimals", numberOfCards: 18 },
@@ -13,7 +13,7 @@ export const collections = [
   },
   {
     name: "Biology",
-    isPinned: false,
+    pinned: false,
     sets: [
       { name: "Cell Structure", numberOfCards: 22 },
       { name: "Genetics Basics", numberOfCards: 28 },
@@ -27,7 +27,7 @@ export const collections = [
   },
   {
     name: "US History",
-    isPinned: true,
+    pinned: true,
     sets: [
       { name: "Colonial America", numberOfCards: 16 },
       { name: "Revolutionary War", numberOfCards: 21 },
@@ -39,7 +39,7 @@ export const collections = [
   },
   {
     name: "French I",
-    isPinned: false,
+    pinned: false,
     sets: [
       { name: "Basics and Greetings", numberOfCards: 20 },
       { name: "Numbers and Dates", numberOfCards: 18 },
@@ -51,7 +51,7 @@ export const collections = [
   },
   {
     name: "Chemistry0 Chemistry Chemistry Chemistry",
-    isPinned: false,
+    pinned: false,
     sets: [
       { name: "Periodic Table", numberOfCards: 36 },
       { name: "Chemical Bonding", numberOfCards: 25 },
@@ -63,7 +63,7 @@ export const collections = [
   },
   {
     name: "Chemistry1",
-    isPinned: false,
+    pinned: false,
     sets: [
       { name: "Periodic Table", numberOfCards: 36 },
       { name: "Chemical Bonding", numberOfCards: 25 },
@@ -75,7 +75,7 @@ export const collections = [
   },
   {
     name: "Chemistry2",
-    isPinned: false,
+    pinned: false,
     sets: [
       { name: "Periodic Table", numberOfCards: 36 },
       { name: "Chemical Bonding", numberOfCards: 25 },
@@ -87,7 +87,7 @@ export const collections = [
   },
   {
     name: "Chemistry3",
-    isPinned: false,
+    pinned: false,
     sets: [
       { name: "Periodic Table", numberOfCards: 36 },
       { name: "Chemical Bonding", numberOfCards: 25 },
@@ -99,7 +99,7 @@ export const collections = [
   },
   {
     name: "Chemistry4",
-    isPinned: false,
+    pinned: false,
     sets: [
       { name: "Periodic Table", numberOfCards: 36 },
       { name: "Chemical Bonding", numberOfCards: 25 },

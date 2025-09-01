@@ -99,7 +99,7 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   };
 
   const know = () => {
-    if (piles.dontKnow.length === 1) makeConfetti();
+    if (piles.dontKnow.length === 1 && piles.discard.length === 0) makeConfetti();
     if (piles.dontKnow.length === 0) return;
     const card = piles.dontKnow[0];
     setHistory([...history, { cardId: card.id, from: "dontKnow", to: "know" }]);

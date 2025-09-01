@@ -1,4 +1,3 @@
-
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Pin } from "lucide-react";
@@ -28,12 +27,12 @@ function Home() {
     discard: [],
   });
 
-  const pinned = collections.filter((c) => c.isPinned);
-  const unpinned = collections.filter((c) => !c.isPinned);
+  const pinned = collections.filter((c) => c.pinned);
+  const unpinned = collections.filter((c) => !c.pinned);
 
   const handlePin = (collection) => {
     const newCollections = collections.map((c) =>
-      c.name === collection.name ? { ...c, isPinned: !c.isPinned } : c
+      c.name === collection.name ? { ...c, pinned: !c.pinned } : c
     );
     setCollections(newCollections);
   };
@@ -142,7 +141,7 @@ function Home() {
                   size={20}
                   color={`#303030`}
                   className={`transition-all hover:scale-105 cursor-pointer ${
-                    collection.isPinned ? "opacity-100" : "opacity-20"
+                    collection.pinned ? "opacity-100" : "opacity-20"
                   }`}
                 />
               </button>
@@ -186,7 +185,7 @@ function Home() {
                   size={20}
                   color={`#303030`}
                   className={`transition-opacity ${
-                    collection.isPinned ? "opacity-100" : "opacity-20"
+                    collection.pinned ? "opacity-100" : "opacity-20"
                   }`}
                 />
               </button>
@@ -247,4 +246,3 @@ function Home() {
 }
 
 export default withAuth(Home);
-
