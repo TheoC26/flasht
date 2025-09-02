@@ -10,6 +10,7 @@ import withAuth from "@/utils/withAuth";
 import { useUser } from "@/utils/hooks/useUser";
 import { useFlashcards } from "@/utils/hooks/useFlashcards";
 import PaymentWall from "@/components/PaymentWall";
+import Link from "next/link";
 
 function Home() {
   const { user } = useUser();
@@ -191,6 +192,15 @@ function Home() {
                     <FlashcardStack title={set.name} />
                   </button>
                 ))}
+                <Link
+                  href={`/create?collection=${encodeURIComponent(
+                    collection.name
+                  )}&collectionid=${encodeURIComponent(collection.id)}`}
+                >
+                  <div className="w-full aspect-[1.79] text-5xl text-[#a3a3a3] mt-4 rounded-xl grid place-items-center bg-[#D9D9D9] border-4 border-[#C6C6C6] transition-all hover:scale-102 cursor-pointer">
+                    +
+                  </div>
+                </Link>
               </div>
             </Reorder.Item>
           ))}
@@ -235,6 +245,15 @@ function Home() {
                     <FlashcardStack title={set.name} />
                   </button>
                 ))}
+                <Link
+                  href={`/create?collection=${encodeURIComponent(
+                    collection.name
+                  )}&collectionid=${encodeURIComponent(collection.id)}`}
+                >
+                  <div className="w-full aspect-[1.79] text-5xl text-[#a3a3a3] mt-4 rounded-xl grid place-items-center bg-[#D9D9D9] border-4 border-[#C6C6C6] transition-all hover:scale-102 cursor-pointer">
+                    +
+                  </div>
+                </Link>
               </div>
             </Reorder.Item>
           ))}

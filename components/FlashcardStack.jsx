@@ -6,7 +6,7 @@ const FlashcardStack = ({title}) => {
       <div className="w-full aspect-[1.79] bg-white rounded-xl flashcard-shadow-dark z-0"></div>
       <div className="w-full aspect-[1.79] bg-white rounded-xl flashcard-shadow-dark -mb-30 z-10"></div>
       <div className="w-full aspect-[1.79] bg-white rounded-xl flashcard-shadow-dark -mb-30 z-20 grid place-items-center">
-        <h2 className='uppercase text-[#303030]'>{title}</h2>
+        <h2 className='text-[#303030]'>{title}</h2>
       </div>
     </div>
   );

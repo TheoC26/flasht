@@ -5,6 +5,8 @@ import ListItem from "./UI/ListItem";
 import { useRouter } from "next/navigation";
 import FloatingMenuBar from "./UI/FloatingMenuBar";
 import { Edit, Trash } from "lucide-react";
+import EditCardModal from "./EditCardModal"; // Import the modal
+import { useFlashcards } from "@/utils/hooks/useFlashcards";
 
 const ViewSet = ({ set, setSet, setData }) => {
   const [flipped, setFlipped] = useState(false);
@@ -15,28 +17,36 @@ const ViewSet = ({ set, setSet, setData }) => {
   const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
   const [currentFloatingMenuBarCard, setCurrentFloatingMenuBarCard] =
     useState(null);
-  const [round, setRound] = useState(1);
+  const [editingCard, setEditingCard] = useState(null); // State for the modal
 
   const router = useRouter();
 
   // on scroll, set floating menu bar to false
   useEffect(() => {
-    window.addEventListener("scroll", () => {
-      setFloatingMenuBar(false);
-    });
-    return () =>
-      window.removeEventListener("scroll", () => {
-        setFloatingMenuBar(false);
-      });
+    const closeMenu = () => setFloatingMenuBar(false);
+    window.addEventListener("scroll", closeMenu);
+    return () => window.removeEventListener("scroll", closeMenu);
   }, []);
 
   // Detect shuffle state
   useEffect(() => {
-    setIsShuffled(
-      set.length > 0 &&
-        !set.every((card, i) => i === 0 || card.index > set[i - 1].index)
-    );
+    if (set) {
+      setIsShuffled(
+        set.length > 0 &&
+          !set.every((card, i) => i === 0 || card.index > set[i - 1].index)
+      );
+    }
   }, [set]);
+
+  const handleCardUpdate = (updatedCard) => {
+    const updatePile = (pile) =>
+      pile.map((c) => (c.id === updatedCard.id ? updatedCard : c));
+
+    if (set) {
+      setSet(updatePile(set));
+    }
+    setDiscardPile(updatePile(discardPile));
+  };
 
   // Shuffle or restore order
   const toggleShuffle = () => {
@@ -60,7 +70,7 @@ const ViewSet = ({ set, setSet, setData }) => {
   const flip = useCallback(() => setFlipped((prev) => !prev), []);
 
   const next = useCallback(() => {
-    if (set.length === 0) return;
+    if (!set || set.length === 0) return;
     const card = set[0];
     setSet(set.slice(1));
     setDiscardPile([card, ...discardPile]);
@@ -77,23 +87,19 @@ const ViewSet = ({ set, setSet, setData }) => {
 
   // Restart: move all cards back to set, clear discardPile, restore order
   const restart = useCallback(() => {
-    const restartedCards = isShuffled
-      ? [...discardPile, ...set]
-      : [...discardPile, ...set].sort((a, b) => a.index - b.index);
-    setSet(restartedCards);
+    const allCardsOriginal = [...discardPile, ...set].sort(
+      (a, b) => a.index - b.index
+    );
+    setSet(allCardsOriginal);
     setDiscardPile([]);
     setFlipped(false);
-    setIsShuffled(
-      restartedCards.length > 0 &&
-        !restartedCards.every(
-          (card, i) => i === 0 || card.index > restartedCards[i - 1].index
-        )
-    );
+    setIsShuffled(false);
   }, [discardPile, set, setSet]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (editingCard != null) return;
       switch (e.key) {
         case "1":
         case "ArrowLeft":
@@ -117,7 +123,7 @@ const ViewSet = ({ set, setSet, setData }) => {
           toggleShuffle();
           break;
         case "Enter":
-          if (set.length === 0) {
+          if (set && set.length === 0) {
             e.preventDefault();
             router.push("/learn/" + setData.id);
           }
@@ -128,7 +134,7 @@ const ViewSet = ({ set, setSet, setData }) => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [back, flip, next, restart, set]);
+  }, [back, flip, next, restart, set, router, setData]);
 
   // CardStack component
   const CardStack = ({ cards }) => (
@@ -155,6 +161,7 @@ const ViewSet = ({ set, setSet, setData }) => {
                 e.preventDefault();
                 setFloatingMenuBar(true);
                 setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                setCurrentFloatingMenuBarCard(card);
               }}
             />
           </motion.div>
@@ -187,14 +194,22 @@ const ViewSet = ({ set, setSet, setData }) => {
   );
 
   // All cards for grid/list
-  const allCards = [...discardPile, ...set].sort((a, b) => a.index - b.index);
+  const allCards = set
+    ? [...discardPile, ...set].sort((a, b) => a.index - b.index)
+    : [];
 
   return (
     <div className=" mx-auto flex-col items-center justify-center mt-5 relative">
-      <CardStack cards={set} />
+      <EditCardModal
+        isOpen={!!editingCard}
+        onClose={() => setEditingCard(null)}
+        card={editingCard}
+        onCardUpdate={handleCardUpdate}
+      />
+      <CardStack cards={set || []} />
       <div
         className={`absolute text-[#303030] font-bold left-25 top-23 opacity-0 delay-300 duration-500 transition-opacity ${
-          set.length < 1 && "opacity-90 h-[310px]"
+          set && set.length < 1 && "opacity-90 h-[310px]"
         }`}
       >
         <h1 className="text-4xl">Thats it!</h1>
@@ -228,7 +243,7 @@ const ViewSet = ({ set, setSet, setData }) => {
       </div>
       <div
         className={`mt-5 flex gap-3 font-bold justify-center ${
-          set.length < 1 && "opacity-0"
+          set && set.length < 1 && "opacity-0"
         }`}
       >
         <div className="flex flex-col relative z-30">
@@ -301,6 +316,7 @@ const ViewSet = ({ set, setSet, setData }) => {
                   e.preventDefault();
                   setFloatingMenuBar(true);
                   setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                  setCurrentFloatingMenuBarCard(card);
                 }}
               />
             ))}
@@ -316,6 +332,7 @@ const ViewSet = ({ set, setSet, setData }) => {
                   e.preventDefault();
                   setFloatingMenuBar(true);
                   setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                  setCurrentFloatingMenuBarCard(card);
                 }}
               />
             ))}
@@ -329,14 +346,23 @@ const ViewSet = ({ set, setSet, setData }) => {
         posY={floatingMenuBarPos.y}
       >
         <div className="flex flex-col">
-          <div className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
+          <button
+            onClick={() => {
+              setEditingCard(currentFloatingMenuBarCard);
+              setFloatingMenuBar(false);
+            }}
+            className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
             <div>Edit</div>
             <Edit size={16} />
-          </div>
-          <div className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
+          </button>
+          <button
+            onClick={() => {}}
+            className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left  flex items-center justify-between"
+          >
             <div>Delete</div>
             <Trash size={16} />
-          </div>
+          </button>
         </div>
       </FloatingMenuBar>
     </div>

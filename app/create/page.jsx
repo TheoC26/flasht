@@ -7,17 +7,26 @@ import ListItem from "@/components/UI/ListItem";
 import withAuth from "@/utils/withAuth";
 import { useUser } from "@/utils/hooks/useUser";
 import { useFlashcards } from "@/utils/hooks/useFlashcards";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { Reorder } from "framer-motion";
 
 const PageScreen = () => {
   const { user } = useUser();
   const { getCollections, createSet, createCollection } = useFlashcards();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlCollection = searchParams.get("collection");
+  const urlCollectionId = searchParams.get("collectionid");
 
   const [collectionSelectionOpen, setCollectionSelectionOpen] = useState(false);
   const [collections, setCollections] = useState([]);
-  const [selectedCollection, setSelectedCollection] = useState(null);
-  const [collectionName, setCollectionName] = useState("");
+  const [selectedCollection, setSelectedCollection] = useState(
+    urlCollectionId ? { name: urlCollection, id: urlCollectionId } : null
+  );
+  const [collectionName, setCollectionName] = useState(
+    urlCollection ? urlCollection : ""
+  );
   const [name, setName] = useState("");
 
   const [focusedCard, setFocusedCard] = useState(null);
@@ -30,6 +39,8 @@ const PageScreen = () => {
   // AI suggestion state
   const [aiSuggestions, setAiSuggestions] = useState({});
   const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
+
+  const [createLoading, setCreateLoading] = useState(false);
 
   const flashcardInputRef = useRef();
 
@@ -55,6 +66,23 @@ const PageScreen = () => {
   }, [user]);
 
   const handleCreateSet = async () => {
+    setCreateLoading(true);
+    // Filter out cards that don't have BOTH a front AND a back
+    const filteredCards = cards.filter(
+      (card) => card.front.trim() && card.back.trim()
+    );
+
+    // If any card has a front but not a back, or a back but not a front, show alert
+    const hasPartialCard = filteredCards.some(
+      (card) =>
+        (card.front.trim() && !card.back.trim()) ||
+        (!card.front.trim() && card.back.trim())
+    );
+    if (hasPartialCard) {
+      alert("Please make sure all flashcards have a front and back.");
+      return;
+    }
+
     if (!name.trim()) {
       alert("Please enter a name for the set.");
       return;
@@ -63,23 +91,23 @@ const PageScreen = () => {
       alert("Please select a collection.");
       return;
     }
-    if (cards.some((card) => !card.front.trim() || !card.back.trim())) {
+    if (filteredCards.some((card) => !card.front.trim() || !card.back.trim())) {
       alert("Please make sure all flashcards have a front and back.");
       return;
     }
 
     if (user) {
-      console.log(selectedCollection)
       const newSet = await createSet(
         name,
         selectedCollection.id,
-        cards,
+        filteredCards,
         user.id
       );
       if (newSet) {
-        alert("Set created successfully!");
         router.push(`/set/${newSet.id}`);
+        setCreateLoading(false);
       } else {
+        setCreateLoading(false);
         alert("Failed to create set.");
       }
     }
@@ -481,7 +509,9 @@ const PageScreen = () => {
               {collections
                 .filter((col) =>
                   collectionName
-                    ? col.name.toLowerCase().includes(collectionName.toLowerCase())
+                    ? col.name
+                        .toLowerCase()
+                        .includes(collectionName.toLowerCase())
                     : true
                 )
                 .map((col, i) => (
@@ -542,20 +572,32 @@ const PageScreen = () => {
       {/* All Flashcards Section */}
       <div className="w-2xl mt-24 font-bold text-[#303030]">
         <div className="flex-col mt-3 pb-6">
-          {cards.map((card, index) => (
-            <ListItem
-              key={card.id}
-              card={card}
-              onClick={() => handleCardClick(index)}
-              current={currentCard === index}
-            />
-          ))}
+          <Reorder.Group
+            axis="y"
+            values={cards}
+            onReorder={setCards}
+            className="flex-col mt-3 pb-6"
+          >
+            {cards.map((card, index) => (
+              <Reorder.Item key={card.id} value={card}>
+                <ListItem
+                  card={card}
+                  onClick={() => handleCardClick(index)}
+                  current={currentCard === index}
+                />
+              </Reorder.Item>
+            ))}
+          </Reorder.Group>
           <div className="w-full flex justify-center mt-6">
             <button
               onClick={handleCreateSet}
               className="mb-28 bg-white px-6 py-3 rounded-2xl flashcard-shadow cursor-pointer transition-all hover:scale-105 hover:bg-[#CBF2CB]"
             >
-              Create set!
+              {createLoading ? (
+                <Loader2 className="w-18 animate-spin" color="#476b47" />
+              ) : (
+                "Create set!"
+              )}
             </button>
           </div>
         </div>

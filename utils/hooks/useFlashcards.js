@@ -92,7 +92,7 @@ export const useFlashcards = () => {
         .single();
 
       if (createError) {
-        console.error("Error creating user progress:", createError);
+        console.log("Error creating user progress:", createError);
         return null;
       }
       return createdProgress;
@@ -161,14 +161,14 @@ export const useFlashcards = () => {
     }
 
     const { data, error } = await supabase
-      .from('user_progress')
+      .from("user_progress")
       .update(updatedData)
-      .eq('id', progressId)
+      .eq("id", progressId)
       .select()
       .single();
 
     if (error) {
-      console.error('Error updating user progress:', error);
+      console.error("Error updating user progress:", error);
       return null;
     }
 
@@ -182,18 +182,168 @@ export const useFlashcards = () => {
     }
 
     const { data, error } = await supabase
-      .from('collections')
+      .from("collections")
       .update(updatedData)
-      .eq('id', collectionId)
+      .eq("id", collectionId)
       .select()
       .single();
 
     if (error) {
-      console.error('Error updating collection:', error);
+      console.error("Error updating collection:", error);
       return null;
     }
 
     return data;
+  };
+
+  const updateCard = async (cardId, updatedData) => {
+    if (!cardId) {
+      console.error("Card ID is required to update a card.");
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("cards")
+      .update(updatedData)
+      .eq("id", cardId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating card:", error);
+      return null;
+    }
+
+    return data;
+  };
+
+  const deleteCard = async (cardId) => {
+    if (!cardId) {
+      console.error("Card ID is required to delete a card.");
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("cards")
+      .delete()
+      .eq("id", cardId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error deleting card:", error);
+      return null;
+    }
+
+    return data; // returns the deleted card
+  };
+
+  const deleteCollection = async (collectionId) => {
+    if (!collectionId) {
+      console.error("Collection ID is required to delete a collection.");
+      return null;
+    }
+
+    // Step 1: Get all sets in the collection
+    const { data: sets, error: setsError } = await supabase
+      .from("sets")
+      .select("id")
+      .eq("collection_id", collectionId);
+
+    if (setsError) {
+      console.error("Error fetching sets for collection:", setsError);
+      return null;
+    }
+
+    // Step 2: Delete each set (and its cards) using deleteSet
+    for (const set of sets) {
+      const deletedSet = await deleteSet(set.id);
+      if (!deletedSet) {
+        console.error(`Failed to delete set with id: ${set.id}`);
+        return null;
+      }
+    }
+
+    // Step 3: Delete the collection itself
+    const { data, error } = await supabase
+      .from("collections")
+      .delete()
+      .eq("id", collectionId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error deleting collection:", error);
+      return null;
+    }
+
+    return data; // returns the deleted collection
+  };
+
+    const deleteSet = async (setId) => {
+      if (!setId) {
+        console.error("Set ID is required to delete a set.");
+        return null;
+      }
+
+      // Step 1: Delete related cards
+      const { error: cardsError } = await supabase
+        .from("cards")
+        .delete()
+        .eq("set_id", setId);
+
+      if (cardsError) {
+        console.error("Error deleting related cards:", cardsError);
+        return null;
+      }
+
+      // Step 2: Delete related user progress
+      const { error: progressError } = await supabase
+        .from("user_progress")
+        .delete()
+        .eq("set_id", setId);
+
+      if (progressError) {
+        console.error("Error deleting related user progress:", progressError);
+        return null;
+      }
+
+      // Step 3: Delete the set itself
+      const { data, error } = await supabase
+        .from("sets")
+        .delete()
+        .eq("id", setId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error deleting set:", error);
+        return null;
+      }
+
+      return data; // returns the deleted set
+    };
+
+
+  const updateSet = async (setId, updatedData) => {
+    if (!setId) {
+      console.error("Set ID is required to update a set.");
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("sets")
+      .update(updatedData)
+      .eq("id", setId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating set:", error);
+      return null;
+    }
+
+    return data; // returns the updated set
   };
 
   return {
@@ -204,5 +354,10 @@ export const useFlashcards = () => {
     createCollection,
     updateUserProgress,
     updateCollection,
+    updateCard,
+    deleteCard,
+    deleteCollection,
+    deleteSet,
+    updateSet,
   };
 };

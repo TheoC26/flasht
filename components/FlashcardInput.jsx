@@ -22,6 +22,7 @@ const FlashcardInput = forwardRef(
       aiSuggestion = "",
       isGeneratingSuggestion = false,
       onAutoFillSuggestion,
+      showNavButtons = true,
     },
     ref
   ) => {
@@ -263,31 +264,35 @@ const FlashcardInput = forwardRef(
           )}
         </div>
 
-        {/* Back Button */}
-        <div className="flex flex-col relative">
-          <button
-            onClick={handleBack}
-            className="px-6 py-2.5 select-none text-base text-gray-600 bg-white rounded-2xl flashcard-shadow-dark transition-all cursor-pointer hover:scale-105"
-          >
-            Back
-          </button>
-          <div className="absolute -bottom-7 text-lg left-1/2 -translate-x-1/2 text-[#BFBFBF]">
-            {"<"}
-          </div>
-        </div>
+        {showNavButtons && (
+          <>
+            {/* Back Button */}
+            <div className="flex flex-col relative">
+              <button
+                onClick={handleBack}
+                className="px-6 py-2.5 select-none text-base text-gray-600 bg-white rounded-2xl flashcard-shadow-dark transition-all cursor-pointer hover:scale-105"
+              >
+                Back
+              </button>
+              <div className="absolute -bottom-7 text-lg left-1/2 -translate-x-1/2 text-[#BFBFBF]">
+                {"<"}
+              </div>
+            </div>
 
-        {/* Next Button */}
-        <div className="flex flex-col relative place-self-end">
-          <button
-            onClick={handleNext}
-            className="px-6 py-2.5 select-none text-base text-gray-600 bg-white rounded-2xl flashcard-shadow-dark transition-all cursor-pointer hover:scale-105"
-          >
-            Next
-          </button>
-          <div className="absolute -bottom-7 text-lg left-1/2 -translate-x-1/2 text-[#BFBFBF]">
-            &gt;
-          </div>
-        </div>
+            {/* Next Button */}
+            <div className="flex flex-col relative place-self-end">
+              <button
+                onClick={handleNext}
+                className="px-6 py-2.5 select-none text-base text-gray-600 bg-white rounded-2xl flashcard-shadow-dark transition-all cursor-pointer hover:scale-105"
+              >
+                Next
+              </button>
+              <div className="absolute -bottom-7 text-lg left-1/2 -translate-x-1/2 text-[#BFBFBF]">
+                &gt;
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
   }
