@@ -1,14 +1,20 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MAX_SMALL_CARD_STACK_HEIGHT } from "@/constants";
 
 import Flashcard from "@/components/Flashcard";
+import FloatingMenuBar from "../UI/FloatingMenuBar";
+import { Edit, Trash } from "lucide-react";
 
 const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   const draggedCardRef = useRef(null);
   const [flipped, setFlipped] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [floatingMenuBar, setFloatingMenuBar] = useState(false);
+  const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
+  const [currentFloatingMenuBarCard, setCurrentFloatingMenuBarCard] =
+    useState(null);
 
   // Mobile detection
   useEffect(() => {
@@ -356,6 +362,12 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
                 flipped={pileName === "main" && i === 0 && flipped}
                 isShuffled={isShuffled}
                 toggleShuffle={toggleShuffle}
+                setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setFloatingMenuBar(true);
+                  setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                }}
               />
             </motion.div>
           ))}
@@ -681,6 +693,23 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
           Know
         </div>
       </div>
+      <FloatingMenuBar
+        isOpen={floatingMenuBar}
+        onClose={() => setFloatingMenuBar(false)}
+        posX={floatingMenuBarPos.x}
+        posY={floatingMenuBarPos.y}
+      >
+        <div className="flex flex-col">
+          <div className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
+            <div>Edit</div>
+            <Edit size={16} />
+          </div>
+        </div>
+        <div className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
+          <div>Delete</div>
+          <Trash size={16} />
+        </div>
+      </FloatingMenuBar>
     </div>
   );
 };

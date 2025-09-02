@@ -3,12 +3,20 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { EllipsisVertical, Repeat2, Shuffle } from "lucide-react";
 
-export default function Flashcard({ card, size = "md", flipped = false, isShuffled, toggleShuffle = () => {} }) {
+export default function Flashcard({
+  card,
+  size = "md",
+  flipped = false,
+  isShuffled,
+  toggleShuffle = () => {},
+  onContextMenu,
+  setCurrentFloatingMenuBarCard,
+}) {
   const [isFlipped, setIsFlipped] = useState(flipped);
 
   useEffect(() => {
-    setIsFlipped(flipped)
-  }, [flipped])
+    setIsFlipped(flipped);
+  }, [flipped]);
 
   const isMain = size == "md";
   const isSmall = size === "sm";
@@ -39,6 +47,11 @@ export default function Flashcard({ card, size = "md", flipped = false, isShuffl
       initial={{ rotateX: 0 }}
       animate={{ rotateX: isFlipped ? 180 : 0 }}
       transition={{ duration: 0.2 }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setCurrentFloatingMenuBarCard(card);
+        onContextMenu(e);
+      }}
     >
       <div
         className={`absolute w-full h-full bg-white border-2 border-[#F7F7F7] rounded-xl text-center flex flashcard-shadow items-center justify-center ${
@@ -66,15 +79,18 @@ export default function Flashcard({ card, size = "md", flipped = false, isShuffl
             </button>
           </>
         )}
-        <button className="absolute top-[7px] right-1.5 p-1 rounded-lg transition-all hover:bg-[#F1F1F1] cursor-pointer">
-          <EllipsisVertical
-            color={"#303030"}
-            size={22}
+        {!isSmall && (
+          <button
+            className="absolute top-[7px] right-1.5 p-1 rounded-lg transition-all hover:bg-[#F1F1F1] cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
+              setCurrentFloatingMenuBarCard(card);
+              onContextMenu(e);
             }}
-          />
-        </button>
+          >
+            <EllipsisVertical color={"#303030"} size={22} />
+          </button>
+        )}
         {card.front}
       </div>
       <div

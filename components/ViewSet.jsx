@@ -150,6 +150,12 @@ const ViewSet = ({ set, setSet, setData }) => {
               flipped={i === 0 && flipped}
               isShuffled={isShuffled}
               toggleShuffle={toggleShuffle}
+              setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setFloatingMenuBar(true);
+                setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+              }}
             />
           </motion.div>
         ))}
@@ -286,7 +292,17 @@ const ViewSet = ({ set, setSet, setData }) => {
         {isGrid ? (
           <div className="w-full grid grid-cols-3 mt-3 gap-2 pb-28">
             {allCards.map((card) => (
-              <Flashcard key={card.id + card.front} card={card} size="grid" />
+              <Flashcard
+                key={card.id + card.front}
+                card={card}
+                size="grid"
+                setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setFloatingMenuBar(true);
+                  setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                }}
+              />
             ))}
           </div>
         ) : (
