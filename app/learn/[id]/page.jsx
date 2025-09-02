@@ -161,8 +161,11 @@ export default function Learn() {
   if (loading || piles === null || round === null) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen bg-[#F1F1F1]">
-        <TopBar isHome={false} />
-        <div>Loading...</div>
+        <TopBar isHome={false} loading={loading} />
+        <div>
+          Study tip: do nothing all semester so finals feel like a thrilling
+          surprise
+        </div>
       </main>
     );
   }
@@ -172,7 +175,7 @@ export default function Learn() {
       <TopBar
         isHome={false}
         name={setInfo?.name || "Learn"}
-        collection={setInfo?.collection_name || "Collection"}
+        collection={setInfo?.collection_name || ""}
       />
       {round == 0 ? (
         <AssessScreen

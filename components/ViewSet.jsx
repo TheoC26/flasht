@@ -2,13 +2,16 @@ import React, { useState, useEffect, useCallback } from "react";
 import Flashcard from "@/components/Flashcard";
 import { motion, AnimatePresence } from "framer-motion";
 import ListItem from "./UI/ListItem";
+import { useRouter } from "next/navigation";
 
-const ViewSet = ({ set, setSet }) => {
+const ViewSet = ({ set, setSet, setData }) => {
   const [flipped, setFlipped] = useState(false);
   const [isGrid, setIsGrid] = useState(true);
   const [isShuffled, setIsShuffled] = useState(false);
   const [discardPile, setDiscardPile] = useState([]);
   const [round, setRound] = useState(1);
+
+  const router = useRouter();
 
   // Detect shuffle state
   useEffect(() => {
@@ -189,7 +192,7 @@ const ViewSet = ({ set, setSet }) => {
           </div>
           <div className="flex-col relative">
             <button
-              onClick={() => setRound((prev) => prev + 1)}
+              onClick={() => router.push("/learn/"+setData.id)}
               className="bg-[#CBF2CB] outline-2 outline-[#BFEBBF] rounded-2xl p-2 px-6 flashcard-shadow cursor-pointer transition-all hover:scale-105"
             >
               Test my knowledge &gt;

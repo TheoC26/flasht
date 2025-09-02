@@ -3,7 +3,7 @@ import { Cog } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
-const TopBar = ({ name, collection, isHome = true }) => {
+const TopBar = ({ name, collection, isHome = true, loading = false }) => {
   return (
     <div className="fixed top-0 left-0 right-0 flex justify-between p-8 text-[#303030] font-bold z-50 bg-gradient-to-b from-[#F1F1F1] to-[#F1F1F100]">
       <div className="bg-white rounded-2xl flex gap-3 flashcard-shadow h-12 transition-all hover:scale-105 group">
@@ -23,18 +23,31 @@ const TopBar = ({ name, collection, isHome = true }) => {
         }`}
       >
         <div className="grid place-items-center">
-          {isHome ? "Flasht" : name}
+          {isHome ? (
+            "Flasht"
+          ) : loading ? (
+            <div className="w-60 h-6 bg-gray-200 rounded-lg animate-pulse"></div>
+          ) : (
+            name
+          )}
         </div>
         {!isHome && (
           <button className="ml-0 w-0 overflow-hidden transition-all group-hover:ml-3 group-hover:w-6 cursor-pointer hover:scale-105">
             <Cog size={20} strokeWidth={2.5} color="#303030" />
           </button>
         )}
-        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-sm w-[300%] text-center line-clamp-1">
-          {!isHome && collection}
+        <div className="absolute pointer-events-none -bottom-6 left-1/2 -translate-x-1/2 text-sm w-[300%] text-center line-clamp-1">
+          {!isHome && loading ? (
+            <div className="w-16 h-4 bg-gray-300 rounded-lg animate-pulse mx-auto"></div>
+          ) : (
+            collection
+          )}
         </div>
       </div>
-      <button onClick={logout} className="bg-white cursor-pointer rounded-2xl flashcard-shadow grid place-items-center px-6 transition-all hover:scale-105">
+      <button
+        onClick={logout}
+        className="bg-white cursor-pointer rounded-2xl flashcard-shadow grid place-items-center px-6 transition-all hover:scale-105"
+      >
         Profile
       </button>
     </div>

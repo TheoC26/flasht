@@ -31,8 +31,8 @@ export default function Set() {
   if (loading) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen bg-[#F1F1F1]">
-        <TopBar isHome={false} />
-        <div>Loading...</div>
+        <TopBar isHome={false} loading={loading} />
+        <div>Study tip: if you wait to the last minute, it will only take a minute</div>
       </main>
     );
   }
@@ -50,10 +50,11 @@ export default function Set() {
     <main className="flex flex-col items-end justify-center min-h-screen bg-[#F1F1F1] pt-40">
       <TopBar
         isHome={false}
+        loading={loading}
         name={setInfo.name || "Set"} // Assuming the set object has a name property
-        collection={setInfo.collection_name || "Collection"} // Assuming the set has a collection object with a name
+        collection={setInfo.collection_name || ""} // Assuming the set has a collection object with a name
       />
-      <ViewSet set={set} setSet={setSet} />
+      <ViewSet set={set} setSet={setSet} setData={setInfo} />
     </main>
   );
 }

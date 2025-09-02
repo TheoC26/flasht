@@ -4,37 +4,63 @@ import { Pin } from "lucide-react";
 import TopBar from "@/components/TopBar";
 import FlashcardStack from "@/components/FlashcardStack";
 import { Reorder } from "framer-motion";
-
-import { collections as initialCollections } from "@/data/collection";
-import { cards as initialCards } from "@/data/cards";
 import SetModal from "@/components/SetModal";
 import OverflowScrollContainer from "@/components/UI/OverflowScrollContainer";
 import withAuth from "@/utils/withAuth";
+import { useUser } from "@/utils/hooks/useUser";
+import { useFlashcards } from "@/utils/hooks/useFlashcards";
+import PaymentWall from "@/components/PaymentWall";
 
 function Home() {
+  const { user } = useUser();
+  const { getCollections, updateCollection, getSet } = useFlashcards();
+
   const scrollContainerRef = useRef(null);
   const bottomBarRef = useRef(null);
   const [indicatorLeftPercent, setIndicatorLeftPercent] = useState(0);
   const [indicatorWidthPercent, setIndicatorWidthPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [collections, setCollections] = useState(initialCollections);
+  const [collections, setCollections] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [setModalOpen, setSetModalOpen] = useState(false);
-  const [piles, setPiles] = useState({
-    main: initialCards,
-    know: [],
-    dontKnow: initialCards,
-    discard: [],
-  });
+  const [selectedSet, setSelectedSet] = useState(null);
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      if (user) {
+        setLoading(true);
+        const userCollections = await getCollections(user.id);
+        if (userCollections) {
+          setCollections(userCollections);
+        }
+        setLoading(false);
+      }
+    };
+    fetchCollections();
+  }, [user]);
 
   const pinned = collections.filter((c) => c.pinned);
   const unpinned = collections.filter((c) => !c.pinned);
 
-  const handlePin = (collection) => {
+  const handlePin = async (collection) => {
+    const newPinnedState = !collection.pinned;
+    // Optimistic UI update
     const newCollections = collections.map((c) =>
-      c.name === collection.name ? { ...c, pinned: !c.pinned } : c
+      c.id === collection.id ? { ...c, pinned: newPinnedState } : c
     );
     setCollections(newCollections);
+
+    // Persist change to the database
+    await updateCollection(collection.id, { pinned: newPinnedState });
+  };
+
+  const handleSetClick = async (set, collection) => {
+    const setData = await getSet(set.id);
+    if (setData) {
+      setSelectedSet({ ...setData, collection });
+      setSetModalOpen(true);
+    }
   };
 
   useEffect(() => {
@@ -63,7 +89,7 @@ function Home() {
       el.removeEventListener("scroll", computeAndSet);
       window.removeEventListener("resize", computeAndSet);
     };
-  }, []);
+  }, [collections]); // Re-run when collections change to recalculate scroll
 
   // Map a pointer X position over the bottom bar to a scrollLeft on the container
   const positionPointerToScroll = (clientX, smooth = false) => {
@@ -103,17 +129,33 @@ function Home() {
     };
   }, [isDragging]);
 
+  if (loading) {
+    return (
+      <main className="flex flex-col items-center justify-center min-h-screen bg-[#F1F1F1]">
+        <TopBar />
+        <div>Study tip: reading the syllabus counts as preparation</div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex flex-col items-end justify-center min-h-screen bg-[#F1F1F1]">
       <TopBar />
 
-      <SetModal
-        setData={collections[0].sets[0]}
-        collection={collections[0]}
-        setModalOpen={setModalOpen}
-        setSetModalOpen={setSetModalOpen}
-        piles={piles}
-      />
+      {selectedSet && (
+        <SetModal
+          setData={selectedSet.info}
+          collection={selectedSet.collection}
+          setModalOpen={setModalOpen}
+          setSetModalOpen={setSetModalOpen}
+          piles={{
+            main: selectedSet.cards,
+            know: [],
+            dontKnow: selectedSet.cards,
+            discard: [],
+          }}
+        />
+      )}
 
       {/* Horizontal scroll container */}
       <div
@@ -130,14 +172,14 @@ function Home() {
         >
           {pinned.map((collection, i) => (
             <Reorder.Item
-              key={collection.name}
+              key={collection.id}
               value={collection}
               className="flex flex-col px-10 py-32 items-left overflow-y-auto hide-scrollbar w-[560px]"
             >
               <button className="mb-2" onClick={() => handlePin(collection)}>
                 <Pin
                   strokeWidth={3}
-                  fill="#303030"
+                  fill={collection.pinned ? "#303030" : "none"}
                   size={20}
                   color={`#303030`}
                   className={`transition-all hover:scale-105 cursor-pointer ${
@@ -152,8 +194,8 @@ function Home() {
               <div className="w-full grid grid-cols-2 gap-5">
                 {collection.sets.map((set, j) => (
                   <button
-                    key={j + set.name}
-                    onClick={() => setSetModalOpen(true)}
+                    key={set.id}
+                    onClick={() => handleSetClick(set, collection)}
                   >
                     <FlashcardStack title={set.name} />
                   </button>
@@ -175,7 +217,7 @@ function Home() {
         >
           {unpinned.map((collection, i) => (
             <Reorder.Item
-              key={collection.name}
+              key={collection.id}
               value={collection}
               className="flex flex-col px-10 py-32 items-left overflow-y-auto hide-scrollbar w-[560px]"
             >
@@ -196,8 +238,8 @@ function Home() {
               <div className="w-full grid grid-cols-2 gap-5">
                 {collection.sets.map((set, j) => (
                   <button
-                    key={j + set.name}
-                    onClick={() => setSetModalOpen(true)}
+                    key={set.id}
+                    onClick={() => handleSetClick(set, collection)}
                   >
                     <FlashcardStack title={set.name} />
                   </button>
@@ -224,7 +266,7 @@ function Home() {
           }}
         ></div>
         {pinned.map((collection, i) => (
-          <div key={i} className="uppercase z-30 whitespace-nowrap">
+          <div key={collection.id} className="uppercase z-30 whitespace-nowrap">
             {collection.name}
           </div>
         ))}
@@ -233,7 +275,7 @@ function Home() {
         )}
         {unpinned.map((collection, i) => (
           <OverflowScrollContainer
-            key={i}
+            key={collection.id}
             styleNames={`uppercase z-30 whitespace-nowrap max-w-28`}
             maxWidth="max-w-28"
           >
@@ -241,6 +283,7 @@ function Home() {
           </OverflowScrollContainer>
         ))}
       </div>
+      {/* <PaymentWall onClose={() => {}} /> */}
     </main>
   );
 }

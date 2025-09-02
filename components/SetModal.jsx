@@ -19,17 +19,17 @@ const SetModal = ({
       </h2>
       <h2 className="text-4xl font-semibold mb-4 uppercase">{setData.name}</h2>
       <div className="w-[808px] h-[458px] bg-[#f1f1f1] border-2 border-[#E8E8E8] flashcard-shadow-dark rounded-2xl p-5 overflow-y-scroll">
-        <ViewSet set={set} setSet={setSet} />
+        <ViewSet set={set} setSet={setSet} setData={setData} />
       </div>
       <div className="w-full flex justify-end mt-5 gap-3 font-bold text-[#303030]">
         <Link
-          href={"/set/id"}
+          href={"/set/" + setData.id}
           className="px-8 py-2 rounded-xl bg-white outline-2 outline-[#E8E8E8] cursor-pointer transition-all flashcard-shadow-dark hover:scale-102"
         >
           View
         </Link>
         <Link
-          href={"/learn/id"}
+          href={"/learn/" + setData.id}
           className="px-8 py-2 rounded-xl bg-[#f1f1f1] outline-2 outline-[#E8E8E8] cursor-pointer transition-all flashcard-shadow-dark hover:scale-102"
         >
           Learn

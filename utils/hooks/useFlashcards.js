@@ -45,7 +45,7 @@ export const useFlashcards = () => {
 
     let setData = {
       cards: cards,
-      info: { ...info, collection_name: collections.name },
+      info: { ...info, collection_name: collections?.name },
     };
     return setData;
   };
@@ -175,6 +175,27 @@ export const useFlashcards = () => {
     return data;
   };
 
+  const updateCollection = async (collectionId, updatedData) => {
+    if (!collectionId) {
+      console.error("Collection ID is required to update a collection.");
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from('collections')
+      .update(updatedData)
+      .eq('id', collectionId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating collection:', error);
+      return null;
+    }
+
+    return data;
+  };
+
   return {
     getCollections,
     getSet,
@@ -182,5 +203,6 @@ export const useFlashcards = () => {
     createSet,
     createCollection,
     updateUserProgress,
+    updateCollection,
   };
 };
