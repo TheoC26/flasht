@@ -55,12 +55,9 @@ function Home() {
     await updateCollection(collection.id, { pinned: newPinnedState });
   };
 
-  const handleSetClick = async (set, collection) => {
-    const setData = await getSet(set.id);
-    if (setData) {
-      setSelectedSet({ ...setData, collection });
-      setSetModalOpen(true);
-    }
+  const handleSetClick = (set, collection) => {
+    setSelectedSet({ info: set, collection });
+    setSetModalOpen(true);
   };
 
   useEffect(() => {
@@ -148,12 +145,6 @@ function Home() {
           collection={selectedSet.collection}
           setModalOpen={setModalOpen}
           setSetModalOpen={setSetModalOpen}
-          piles={{
-            main: selectedSet.cards,
-            know: [],
-            dontKnow: selectedSet.cards,
-            discard: [],
-          }}
         />
       )}
 

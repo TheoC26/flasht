@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Shuffle } from "lucide-react";
+import { EllipsisVertical, Repeat2, Shuffle } from "lucide-react";
 
 export default function Flashcard({ card, size = "md", flipped = false, isShuffled, toggleShuffle = () => {} }) {
   const [isFlipped, setIsFlipped] = useState(flipped);
@@ -42,23 +42,39 @@ export default function Flashcard({ card, size = "md", flipped = false, isShuffl
     >
       <div
         className={`absolute w-full h-full bg-white border-2 border-[#F7F7F7] rounded-xl text-center flex flashcard-shadow items-center justify-center ${
-          isSmall || isGrid
-            ? "text-sm"
-            : isExtraSmall
-            ? "text-xs"
-            : "text-4xl"
+          isSmall || isGrid ? "text-sm" : isExtraSmall ? "text-xs" : "text-4xl"
         } font-bold text-[#303030] backface-hidden`}
         style={{ transform: "rotateX(0deg)" }}
       >
         {isMain && (
-          <button className="absolute top-3 right-3 cursor-pointer">
-            <Shuffle
-              color={isShuffled ? "#303030" : "#959595"}
-              size={20}
-              onClick={toggleShuffle}
-            />
-          </button>
+          <>
+            <button className="absolute top-2 right-9 p-1 rounded-lg transition-all hover:bg-[#F1F1F1] cursor-pointer">
+              <Shuffle
+                color={isShuffled ? "#303030" : "#959595"}
+                size={20}
+                onClick={toggleShuffle}
+              />
+            </button>
+            <button className="absolute top-1.5 right-16 p-1 rounded-lg transition-all hover:bg-[#F1F1F1] cursor-pointer">
+              <Repeat2
+                color={"#959595"}
+                size={24}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+            </button>
+          </>
         )}
+        <button className="absolute top-[7px] right-1.5 p-1 rounded-lg transition-all hover:bg-[#F1F1F1] cursor-pointer">
+          <EllipsisVertical
+            color={"#303030"}
+            size={22}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          />
+        </button>
         {card.front}
       </div>
       <div

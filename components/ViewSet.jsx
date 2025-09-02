@@ -3,15 +3,32 @@ import Flashcard from "@/components/Flashcard";
 import { motion, AnimatePresence } from "framer-motion";
 import ListItem from "./UI/ListItem";
 import { useRouter } from "next/navigation";
+import FloatingMenuBar from "./UI/FloatingMenuBar";
+import { Edit, Trash } from "lucide-react";
 
 const ViewSet = ({ set, setSet, setData }) => {
   const [flipped, setFlipped] = useState(false);
   const [isGrid, setIsGrid] = useState(true);
   const [isShuffled, setIsShuffled] = useState(false);
   const [discardPile, setDiscardPile] = useState([]);
+  const [floatingMenuBar, setFloatingMenuBar] = useState(false);
+  const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
+  const [currentFloatingMenuBarCard, setCurrentFloatingMenuBarCard] =
+    useState(null);
   const [round, setRound] = useState(1);
 
   const router = useRouter();
+
+  // on scroll, set floating menu bar to false
+  useEffect(() => {
+    window.addEventListener("scroll", () => {
+      setFloatingMenuBar(false);
+    });
+    return () =>
+      window.removeEventListener("scroll", () => {
+        setFloatingMenuBar(false);
+      });
+  }, []);
 
   // Detect shuffle state
   useEffect(() => {
@@ -102,7 +119,7 @@ const ViewSet = ({ set, setSet, setData }) => {
         case "Enter":
           if (set.length === 0) {
             e.preventDefault();
-            setRound((prev) => prev + 1);
+            router.push("/learn/" + setData.id);
           }
           break;
         default:
@@ -192,7 +209,7 @@ const ViewSet = ({ set, setSet, setData }) => {
           </div>
           <div className="flex-col relative">
             <button
-              onClick={() => router.push("/learn/"+setData.id)}
+              onClick={() => router.push("/learn/" + setData.id)}
               className="bg-[#CBF2CB] outline-2 outline-[#BFEBBF] rounded-2xl p-2 px-6 flashcard-shadow cursor-pointer transition-all hover:scale-105"
             >
               Test my knowledge &gt;
@@ -275,11 +292,37 @@ const ViewSet = ({ set, setSet, setData }) => {
         ) : (
           <div className="flex-col mt-3 pb-28">
             {allCards.map((card) => (
-              <ListItem key={card.id + card.front} card={card} />
+              <ListItem
+                key={card.id + card.front}
+                card={card}
+                setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setFloatingMenuBar(true);
+                  setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                }}
+              />
             ))}
           </div>
         )}
       </div>
+      <FloatingMenuBar
+        isOpen={floatingMenuBar}
+        onClose={() => setFloatingMenuBar(false)}
+        posX={floatingMenuBarPos.x}
+        posY={floatingMenuBarPos.y}
+      >
+        <div className="flex flex-col">
+          <div className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
+            <div>Edit</div>
+            <Edit size={16} />
+          </div>
+          <div className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
+            <div>Delete</div>
+            <Trash size={16} />
+          </div>
+        </div>
+      </FloatingMenuBar>
     </div>
   );
 };

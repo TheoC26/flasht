@@ -5,6 +5,7 @@ import TopBar from "@/components/TopBar";
 import { useUser } from "@/utils/hooks/useUser";
 import { useFlashcards } from "@/utils/hooks/useFlashcards";
 import { useParams } from "next/navigation";
+import FloatingMenuBar from "@/components/UI/FloatingMenuBar";
 
 export default function Set() {
   const { id } = useParams();
