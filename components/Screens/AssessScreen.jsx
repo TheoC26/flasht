@@ -5,6 +5,8 @@ import { MAX_SMALL_CARD_STACK_HEIGHT } from "@/constants";
 import Flashcard from "@/components/Flashcard";
 import FloatingMenuBar from "../UI/FloatingMenuBar";
 import { Edit, Trash } from "lucide-react";
+import EditCardModal from "../EditCardModal";
+import DeleteConfirmationModal from "../DeleteConfirmationModal";
 
 const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   const draggedCardRef = useRef(null);
@@ -15,6 +17,9 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
   const [currentFloatingMenuBarCard, setCurrentFloatingMenuBarCard] =
     useState(null);
+
+  const [editingCard, setEditingCard] = useState(null);
+  const [deletingItem, setDeletingItem] = useState(null);
 
   // Mobile detection
   useEffect(() => {
@@ -35,6 +40,41 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
         )
     );
   }, [piles.main]);
+
+  // on scroll, set floating menu bar to false
+  useEffect(() => {
+    const closeMenu = () => setFloatingMenuBar(false);
+    window.addEventListener("scroll", closeMenu);
+    return () => window.removeEventListener("scroll", closeMenu);
+  }, []);
+
+  const handleCardUpdate = (updatedCard) => {
+    setPiles((prevPiles) => {
+      const newPiles = { ...prevPiles };
+      for (const pileName in newPiles) {
+        if (Array.isArray(newPiles[pileName])) {
+            newPiles[pileName] = newPiles[pileName].map((card) =>
+                card.id === updatedCard.id ? updatedCard : card
+            );
+        }
+      }
+      return newPiles;
+    });
+  };
+
+  const handleDeleteSuccess = (deletedCardId) => {
+    setPiles((prevPiles) => {
+      const newPiles = { ...prevPiles };
+      for (const pileName in newPiles) {
+        if (Array.isArray(newPiles[pileName])) {
+            newPiles[pileName] = newPiles[pileName].filter(
+                (card) => card.id !== deletedCardId
+            );
+        }
+      }
+      return newPiles;
+    });
+  };
 
   const toggleShuffle = (e) => {
     setPiles((prev) => {
@@ -142,7 +182,7 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
     dropZoneElements.forEach((el, i) => {
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      console.log(e.clientX, rect.left)
+      console.log(e.clientX, rect.left);
       if (
         e.clientX > rect.left &&
         e.clientX < rect.right &&
@@ -199,6 +239,7 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (editingCard || deletingItem) return; // Disable shortcuts if a modal is open
       switch (e.key) {
         case "1":
         case "ArrowLeft":
@@ -243,12 +284,12 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
 
   const CardStack = ({ pileName, cards, size = "md" }) => {
     const isSmall = size === "sm";
-    const isExtraSmall = size === "xs"
+    const isExtraSmall = size === "xs";
     const isMainPile = pileName === "main";
     const isDraggable = !isMobile || isMainPile;
 
     const maxCards = isMobile
-      ? MAX_SMALL_CARD_STACK_HEIGHT/5
+      ? MAX_SMALL_CARD_STACK_HEIGHT / 5
       : MAX_SMALL_CARD_STACK_HEIGHT;
 
     return (
@@ -364,9 +405,10 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
                 toggleShuffle={toggleShuffle}
                 setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
                 onContextMenu={(e) => {
-                  e.preventDefault();
-                  setFloatingMenuBar(true);
-                  setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                   e.preventDefault();
+                   setFloatingMenuBar(true);
+                   setCurrentFloatingMenuBarCard(card);
+                   setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
                 }}
               />
             </motion.div>
@@ -401,6 +443,18 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   if (isMobile) {
     return (
       <div className="w-full h-screen flex flex-col justify-between p-4 overflow-hidden">
+        <EditCardModal
+          isOpen={!!editingCard}
+          onClose={() => setEditingCard(null)}
+          card={editingCard}
+          onCardUpdate={handleCardUpdate}
+        />
+        <DeleteConfirmationModal
+          isOpen={!!deletingItem}
+          onClose={() => setDeletingItem(null)}
+          item={deletingItem}
+          onDeleteSuccess={handleDeleteSuccess}
+        />
         {/* Main card area */}
         <div className="flex-1 flex flex-col items-center justify-center relative mt-24">
           <CardStack pileName="main" size="sm" cards={piles.main} />
@@ -540,6 +594,18 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
   // Desktop layout (original)
   return (
     <div className="w-full max-w-[100rem] mx-auto h-screen flex justify-center items-center pt-12 overflow-hidden">
+      <EditCardModal
+        isOpen={!!editingCard}
+        onClose={() => setEditingCard(null)}
+        card={editingCard}
+        onCardUpdate={handleCardUpdate}
+      />
+      <DeleteConfirmationModal
+        isOpen={!!deletingItem}
+        onClose={() => setDeletingItem(null)}
+        item={deletingItem}
+        onDeleteSuccess={handleDeleteSuccess}
+      />
       <div className="flex flex-col items-center mr-20 mb-5 relative">
         <CardStack pileName="main" size="md" cards={piles.main} />
         <div
@@ -700,14 +766,29 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
         posY={floatingMenuBarPos.y}
       >
         <div className="flex flex-col">
-          <div className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
+          <button
+            onClick={() => {
+              setEditingCard(currentFloatingMenuBarCard);
+              setFloatingMenuBar(false);
+            }}
+            className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
             <div>Edit</div>
             <Edit size={16} />
-          </div>
-        </div>
-        <div className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
-          <div>Delete</div>
-          <Trash size={16} />
+          </button>
+          <button
+            onClick={() => {
+              setDeletingItem({
+                id: currentFloatingMenuBarCard.id,
+                type: "card",
+              });
+              setFloatingMenuBar(false);
+            }}
+            className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
+            <div>Delete</div>
+            <Trash size={16} />
+          </button>
         </div>
       </FloatingMenuBar>
     </div>

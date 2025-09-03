@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import ListItem from "../UI/ListItem";
 import FloatingMenuBar from "../UI/FloatingMenuBar";
 import { Edit, Trash } from "lucide-react";
+import EditCardModal from "../EditCardModal";
+import DeleteConfirmationModal from "../DeleteConfirmationModal";
 
 const LearnScreen = ({ piles, setPiles, setRound }) => {
   const [flipped, setFlipped] = useState(false);
@@ -15,6 +17,44 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
   const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
   const [currentFloatingMenuBarCard, setCurrentFloatingMenuBarCard] =
     useState(null);
+
+  const [editingCard, setEditingCard] = useState(null);
+  const [deletingItem, setDeletingItem] = useState(null);
+
+  // on scroll, set floating menu bar to false
+  useEffect(() => {
+    const closeMenu = () => setFloatingMenuBar(false);
+    window.addEventListener("scroll", closeMenu);
+    return () => window.removeEventListener("scroll", closeMenu);
+  }, []);
+
+  const handleCardUpdate = (updatedCard) => {
+    setPiles((prevPiles) => {
+      const newPiles = { ...prevPiles };
+      for (const pileName in newPiles) {
+        if (Array.isArray(newPiles[pileName])) {
+            newPiles[pileName] = newPiles[pileName].map((card) =>
+                card.id === updatedCard.id ? updatedCard : card
+            );
+        }
+      }
+      return newPiles;
+    });
+  };
+
+  const handleDeleteSuccess = (deletedCardId) => {
+    setPiles((prevPiles) => {
+      const newPiles = { ...prevPiles };
+      for (const pileName in newPiles) {
+        if (Array.isArray(newPiles[pileName])) {
+            newPiles[pileName] = newPiles[pileName].filter(
+                (card) => card.id !== deletedCardId
+            );
+        }
+      }
+      return newPiles;
+    });
+  };
 
   useEffect(() => {
     setIsShuffled(
@@ -103,6 +143,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (editingCard || deletingItem) return; // Disable shortcuts if a modal is open
       switch (e.key) {
         case "1":
         case "ArrowLeft":
@@ -168,7 +209,9 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
                 setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
                 onContextMenu={(e) => {
                   e.preventDefault();
+                  e.preventDefault();
                   setFloatingMenuBar(true);
+                  setCurrentFloatingMenuBarCard(card);
                   setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
                 }}
               />
@@ -204,6 +247,18 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
 
   return (
     <div className="w-[600px] mx-auto flex-col items-center justify-center mt-40 relative">
+      <EditCardModal
+        isOpen={!!editingCard}
+        onClose={() => setEditingCard(null)}
+        card={editingCard}
+        onCardUpdate={handleCardUpdate}
+      />
+      <DeleteConfirmationModal
+        isOpen={!!deletingItem}
+        onClose={() => setDeletingItem(null)}
+        item={deletingItem}
+        onDeleteSuccess={handleDeleteSuccess}
+      />
       <CardStack cards={piles.dontKnow} />
       <div
         className={`absolute text-[#303030] font-bold left-10 top-20 opacity-0 delay-300 duration-500 transition-opacity ${
@@ -308,11 +363,18 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
             {[...[...piles.discard], ...piles.dontKnow]
               .sort((a, b) => a.index - b.index)
               .map((card, i) => (
-                <Flashcard key={card.id + card.front} card={card} size="grid" setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard} onContextMenu={(e) => {
-                  e.preventDefault();
-                  setFloatingMenuBar(true);
-                  setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
-                }} />
+                <Flashcard
+                  key={card.id + card.front}
+                  card={card}
+                  size="grid"
+                  setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setFloatingMenuBar(true);
+                    setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                    setCurrentFloatingMenuBarCard(card);
+                  }}
+                />
               ))}
           </div>
         ) : (
@@ -320,11 +382,17 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
             {[...[...piles.discard], ...piles.dontKnow]
               .sort((a, b) => a.index - b.index)
               .map((card, i) => (
-                <ListItem key={card.id + card.front} card={card} setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard} onContextMenu={(e) => {
-                  e.preventDefault();
-                  setFloatingMenuBar(true);
-                  setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
-                }} />
+                <ListItem
+                  key={card.id + card.front}
+                  card={card}
+                  setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setFloatingMenuBar(true);
+                    setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                    setCurrentFloatingMenuBarCard(card);
+                  }}
+                />
               ))}
           </div>
         )}
@@ -342,14 +410,29 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
         posY={floatingMenuBarPos.y}
       >
         <div className="flex flex-col">
-          <div className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
+          <button
+            onClick={() => {
+              setEditingCard(currentFloatingMenuBarCard);
+              setFloatingMenuBar(false);
+            }}
+            className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
             <div>Edit</div>
             <Edit size={16} />
-          </div>
-        </div>
-        <div className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
-          <div>Delete</div>
-          <Trash size={16} />
+          </button>
+          <button
+            onClick={() => {
+              setDeletingItem({
+                id: currentFloatingMenuBarCard.id,
+                type: "card",
+              });
+              setFloatingMenuBar(false);
+            }}
+            className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
+            <div>Delete</div>
+            <Trash size={16} />
+          </button>
         </div>
       </FloatingMenuBar>
     </div>

@@ -5,8 +5,8 @@ import ListItem from "./UI/ListItem";
 import { useRouter } from "next/navigation";
 import FloatingMenuBar from "./UI/FloatingMenuBar";
 import { Edit, Trash } from "lucide-react";
-import EditCardModal from "./EditCardModal"; // Import the modal
-import { useFlashcards } from "@/utils/hooks/useFlashcards";
+import EditCardModal from "./EditCardModal";
+import DeleteConfirmationModal from "./DeleteConfirmationModal"; // Import Delete Modal
 
 const ViewSet = ({ set, setSet, setData }) => {
   const [flipped, setFlipped] = useState(false);
@@ -17,7 +17,8 @@ const ViewSet = ({ set, setSet, setData }) => {
   const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
   const [currentFloatingMenuBarCard, setCurrentFloatingMenuBarCard] =
     useState(null);
-  const [editingCard, setEditingCard] = useState(null); // State for the modal
+  const [editingCard, setEditingCard] = useState(null);
+  const [deletingItem, setDeletingItem] = useState(null); // State for delete modal
 
   const router = useRouter();
 
@@ -48,15 +49,20 @@ const ViewSet = ({ set, setSet, setData }) => {
     setDiscardPile(updatePile(discardPile));
   };
 
+  const handleDeleteSuccess = (deletedCardId) => {
+    if (set) {
+        setSet(set.filter(c => c.id !== deletedCardId));
+    }
+    setDiscardPile(discardPile.filter(c => c.id !== deletedCardId));
+  };
+
   // Shuffle or restore order
   const toggleShuffle = () => {
     setSet((prev) => {
       let newSet = [...prev];
       if (isShuffled) {
-        // Restore original order based on card.index
         newSet = newSet.sort((a, b) => a.index - b.index);
       } else {
-        // Shuffle the set
         for (let i = newSet.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [newSet[i], newSet[j]] = [newSet[j], newSet[i]];
@@ -85,21 +91,17 @@ const ViewSet = ({ set, setSet, setData }) => {
     setFlipped(false);
   }, [discardPile, set, setSet]);
 
-  // Restart: move all cards back to set, clear discardPile, restore order
   const restart = useCallback(() => {
-    const allCardsOriginal = [...discardPile, ...set].sort(
-      (a, b) => a.index - b.index
-    );
+    const allCardsOriginal = [...discardPile, ...set].sort((a, b) => a.index - b.index);
     setSet(allCardsOriginal);
     setDiscardPile([]);
     setFlipped(false);
     setIsShuffled(false);
   }, [discardPile, set, setSet]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (editingCard != null) return;
+        if (editingCard || deletingItem) return; // Disable shortcuts if a modal is open
       switch (e.key) {
         case "1":
         case "ArrowLeft":
@@ -134,9 +136,8 @@ const ViewSet = ({ set, setSet, setData }) => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [back, flip, next, restart, set, router, setData]);
+  }, [back, flip, next, restart, set, router, setData, editingCard, deletingItem]);
 
-  // CardStack component
   const CardStack = ({ cards }) => (
     <div className="card-stack relative flex items-end mx-auto justify-center w-[600px] h-[310px]">
       <AnimatePresence>
@@ -145,11 +146,7 @@ const ViewSet = ({ set, setSet, setData }) => {
             key={card.id}
             layoutId={card.id}
             className="absolute"
-            style={{
-              zIndex: 10 - i,
-              y: i * 10,
-              transformOrigin: "center center",
-            }}
+            style={{ zIndex: 10 - i, y: i * 10, transformOrigin: "center center" }}
           >
             <Flashcard
               card={card}
@@ -170,22 +167,14 @@ const ViewSet = ({ set, setSet, setData }) => {
       <div className="absolute -left-10 -right-10 -bottom-[40px] h-10 bg-gradient-to-b from-[#f1f1f100] to-[#f1f1f1] z-20"></div>
       <div className="absolute -left-10 -right-10 -bottom-[100px] h-[60px] bg-[#f1f1f1] z-20"></div>
       <AnimatePresence>
-        <div
-          className="absolute -left-12 bottom-0 w-10"
-          style={{ perspective: "200px" }}
-        >
+        <div className="absolute -left-12 bottom-0 w-10" style={{ perspective: "200px" }}>
           {[...cards].reverse().map((card, i) => (
             <motion.div
               layoutId={card.id + "mini"}
               key={card.id + "mini"}
               transition={{ duration: 0.1 }}
               className="w-full absolute flashcard-shadow aspect-[1.79] bg-white rounded-sm"
-              style={{
-                bottom: `${i * 3}px`,
-                zIndex: i,
-                transform: `rotateX(20deg)`,
-                boxShadow: "0 1px 7px rgba(0,0,0,0.08)",
-              }}
+              style={{ bottom: `${i * 3}px`, zIndex: i, transform: `rotateX(20deg)`, boxShadow: "0 1px 7px rgba(0,0,0,0.08)" }}
             ></motion.div>
           ))}
         </div>
@@ -193,10 +182,7 @@ const ViewSet = ({ set, setSet, setData }) => {
     </div>
   );
 
-  // All cards for grid/list
-  const allCards = set
-    ? [...discardPile, ...set].sort((a, b) => a.index - b.index)
-    : [];
+  const allCards = set ? [...discardPile, ...set].sort((a, b) => a.index - b.index) : [];
 
   return (
     <div className=" mx-auto flex-col items-center justify-center mt-5 relative">
@@ -205,6 +191,12 @@ const ViewSet = ({ set, setSet, setData }) => {
         onClose={() => setEditingCard(null)}
         card={editingCard}
         onCardUpdate={handleCardUpdate}
+      />
+      <DeleteConfirmationModal
+        isOpen={!!deletingItem}
+        onClose={() => setDeletingItem(null)}
+        item={deletingItem}
+        onDeleteSuccess={handleDeleteSuccess}
       />
       <CardStack cards={set || []} />
       <div
@@ -357,8 +349,14 @@ const ViewSet = ({ set, setSet, setData }) => {
             <Edit size={16} />
           </button>
           <button
-            onClick={() => {}}
-            className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left  flex items-center justify-between"
+            onClick={() => {
+              setDeletingItem({
+                id: currentFloatingMenuBarCard.id,
+                type: "card",
+              });
+              setFloatingMenuBar(false);
+            }}
+            className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left flex items-center justify-between"
           >
             <div>Delete</div>
             <Trash size={16} />

@@ -7,6 +7,8 @@ import Link from "next/link";
 import confetti from "canvas-confetti";
 import FloatingMenuBar from "../UI/FloatingMenuBar";
 import { Edit, Trash } from "lucide-react";
+import EditCardModal from "../EditCardModal";
+import DeleteConfirmationModal from "../DeleteConfirmationModal";
 
 const TestScreen = ({ piles, setPiles, history, setHistory, setRound, restart }) => {
   const draggedCardRef = useRef(null);
@@ -16,6 +18,43 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound, restart })
   const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
   const [currentFloatingMenuBarCard, setCurrentFloatingMenuBarCard] =
     useState(null);
+  const [editingCard, setEditingCard] = useState(null);
+  const [deletingItem, setDeletingItem] = useState(null);
+
+  // on scroll, set floating menu bar to false
+  useEffect(() => {
+    const closeMenu = () => setFloatingMenuBar(false);
+    window.addEventListener("scroll", closeMenu);
+    return () => window.removeEventListener("scroll", closeMenu);
+  }, []);
+
+  const handleCardUpdate = (updatedCard) => {
+    setPiles((prevPiles) => {
+      const newPiles = { ...prevPiles };
+      for (const pileName in newPiles) {
+        if (Array.isArray(newPiles[pileName])) {
+            newPiles[pileName] = newPiles[pileName].map((card) =>
+                card.id === updatedCard.id ? updatedCard : card
+            );
+        }
+      }
+      return newPiles;
+    });
+  };
+
+  const handleDeleteSuccess = (deletedCardId) => {
+    setPiles((prevPiles) => {
+      const newPiles = { ...prevPiles };
+      for (const pileName in newPiles) {
+        if (Array.isArray(newPiles[pileName])) {
+            newPiles[pileName] = newPiles[pileName].filter(
+                (card) => card.id !== deletedCardId
+            );
+        }
+      }
+      return newPiles;
+    });
+  };
 
   // CONFETTITTTIII
   function makeConfetti() {
@@ -105,7 +144,8 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound, restart })
   };
 
   const know = () => {
-    if (piles.dontKnow.length === 1 && piles.discard.length === 0) makeConfetti();
+    if (piles.dontKnow.length === 1 && piles.discard.length === 0)
+      makeConfetti();
     if (piles.dontKnow.length === 0) return;
     const card = piles.dontKnow[0];
     setHistory([...history, { cardId: card.id, from: "dontKnow", to: "know" }]);
@@ -203,6 +243,7 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound, restart })
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (editingCard || deletingItem) return; // Disable shortcuts if a modal is open
       switch (e.key) {
         case "1":
         case "ArrowLeft":
@@ -303,6 +344,7 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound, restart })
                 onContextMenu={(e) => {
                   e.preventDefault();
                   setFloatingMenuBar(true);
+                  setCurrentFloatingMenuBarCard(card);
                   setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
                 }}
               />
@@ -336,6 +378,18 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound, restart })
 
   return (
     <div className="w-full max-w-[100rem] mx-auto flex justify-center items-end overflow-hidden">
+      <EditCardModal
+        isOpen={!!editingCard}
+        onClose={() => setEditingCard(null)}
+        card={editingCard}
+        onCardUpdate={handleCardUpdate}
+      />
+      <DeleteConfirmationModal
+        isOpen={!!deletingItem}
+        onClose={() => setDeletingItem(null)}
+        item={deletingItem}
+        onDeleteSuccess={handleDeleteSuccess}
+      />
       <div className="flex flex-col items-center mr-20 mb-5 relative">
         <CardStack pileName="dontKnow" size="md" cards={piles.dontKnow} />
         <div
@@ -478,14 +532,29 @@ const TestScreen = ({ piles, setPiles, history, setHistory, setRound, restart })
         posY={floatingMenuBarPos.y}
       >
         <div className="flex flex-col">
-          <div className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
+          <button
+            onClick={() => {
+              setEditingCard(currentFloatingMenuBarCard);
+              setFloatingMenuBar(false);
+            }}
+            className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
             <div>Edit</div>
             <Edit size={16} />
-          </div>
-        </div>
-        <div className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left  flex items-center justify-between">
-          <div>Delete</div>
-          <Trash size={16} />
+          </button>
+          <button
+            onClick={() => {
+              setDeletingItem({
+                id: currentFloatingMenuBarCard.id,
+                type: "card",
+              });
+              setFloatingMenuBar(false);
+            }}
+            className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
+            <div>Delete</div>
+            <Trash size={16} />
+          </button>
         </div>
       </FloatingMenuBar>
     </div>
