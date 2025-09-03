@@ -176,6 +176,7 @@ export default function Learn() {
         isHome={false}
         name={setInfo?.name || "Learn"}
         collection={setInfo?.collection_name || ""}
+        id={setInfo?.id || ""}
       />
       {round == 0 ? (
         <AssessScreen

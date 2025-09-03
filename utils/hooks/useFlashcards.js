@@ -325,25 +325,54 @@ export const useFlashcards = () => {
     };
 
 
-  const updateSet = async (setId, updatedData) => {
+  const updateSet = async (setId, setData, cardList) => {
     if (!setId) {
       console.error("Set ID is required to update a set.");
       return null;
     }
 
-    const { data, error } = await supabase
+    // 1. Update the set's own data (name, collection_id)
+    const { data: updatedSet, error: setUpdateError } = await supabase
       .from("sets")
-      .update(updatedData)
+      .update(setData)
       .eq("id", setId)
       .select()
       .single();
 
-    if (error) {
-      console.error("Error updating set:", error);
+    if (setUpdateError) {
+      console.error("Error updating set:", setUpdateError);
       return null;
     }
 
-    return data; // returns the updated set
+    // 2. Delete all existing cards for the set
+    const { error: deleteError } = await supabase
+      .from('cards')
+      .delete()
+      .eq('set_id', setId);
+
+    if (deleteError) {
+        console.error('Error deleting old cards:', deleteError);
+        return null;
+    }
+
+    // 3. Insert the new list of cards
+    if (cardList && cardList.length > 0) {
+        const newCardData = cardList.map((card, index) => ({
+            set_id: setId,
+            front: card.front,
+            back: card.back,
+            index: index,
+        }));
+
+        const { error: insertError } = await supabase.from("cards").insert(newCardData);
+
+        if (insertError) {
+            console.error("Error inserting new cards:", insertError);
+            return null;
+        }
+    }
+
+    return updatedSet;
   };
 
   return {

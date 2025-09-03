@@ -3,7 +3,7 @@ import { Cog } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
-const TopBar = ({ name, collection, isHome = true, loading = false }) => {
+const TopBar = ({ name, collection, id, isHome = true, loading = false }) => {
   return (
     <div className="fixed top-0 left-0 right-0 flex justify-between p-8 text-[#303030] font-bold z-50 bg-gradient-to-b from-[#F1F1F1] to-[#F1F1F100]">
       <div className="bg-white rounded-2xl flex gap-3 flashcard-shadow h-12 transition-all hover:scale-105 group">
@@ -31,10 +31,10 @@ const TopBar = ({ name, collection, isHome = true, loading = false }) => {
             name
           )}
         </div>
-        {!isHome && (
-          <button className="ml-0 w-0 overflow-hidden transition-all group-hover:ml-3 group-hover:w-6 cursor-pointer hover:scale-105">
+        {!isHome && !loading && (
+          <Link href={"/edit/"+id} className="ml-0 w-0 overflow-hidden transition-all group-hover:ml-3 group-hover:w-6 cursor-pointer hover:scale-105">
             <Cog size={20} strokeWidth={2.5} color="#303030" />
-          </button>
+          </Link>
         )}
         <div className="absolute pointer-events-none -bottom-6 left-1/2 -translate-x-1/2 text-sm w-[300%] text-center line-clamp-1">
           {!isHome && loading ? (

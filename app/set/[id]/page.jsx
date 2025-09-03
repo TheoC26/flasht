@@ -54,6 +54,7 @@ export default function Set() {
         loading={loading}
         name={setInfo.name || "Set"} // Assuming the set object has a name property
         collection={setInfo.collection_name || ""} // Assuming the set has a collection object with a name
+        id={setInfo.id || ""}
       />
       <ViewSet set={set} setSet={setSet} setData={setInfo} />
     </main>

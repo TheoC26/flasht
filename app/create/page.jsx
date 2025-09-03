@@ -8,10 +8,13 @@ import withAuth from "@/utils/withAuth";
 import { useUser } from "@/utils/hooks/useUser";
 import { useFlashcards } from "@/utils/hooks/useFlashcards";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Edit, Loader2, Trash } from "lucide-react";
 import { Reorder } from "framer-motion";
+import FloatingMenuBar from "@/components/UI/FloatingMenuBar";
+import EditCardModal from "@/components/EditCardModal";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 
-const PageScreen = () => {
+const CreatePageScreen = () => {
   const { user } = useUser();
   const { getCollections, createSet, createCollection } = useFlashcards();
   const router = useRouter();
@@ -28,6 +31,13 @@ const PageScreen = () => {
     urlCollection ? urlCollection : ""
   );
   const [name, setName] = useState("");
+
+  const [floatingMenuBar, setFloatingMenuBar] = useState(false);
+  const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
+  const [currentFloatingMenuBarCard, setCurrentFloatingMenuBarCard] =
+    useState(null);
+  const [editingCard, setEditingCard] = useState(null);
+  const [deletingItem, setDeletingItem] = useState(null); // State for delete modal
 
   const [focusedCard, setFocusedCard] = useState(null);
   const [frontFontSize, setFrontFontSize] = useState(24);
@@ -52,6 +62,21 @@ const PageScreen = () => {
 
   // Debounce timer for AI suggestions
   const suggestionTimerRef = useRef(null);
+
+  const handleCardUpdate = (updatedCard) => {
+    const updatePile = (pile) =>
+      pile.map((c) => (c.id === updatedCard.id ? updatedCard : c));
+
+    if (cards) {
+      setCards(updatePile(cards));
+    }
+  };
+
+  const handleDeleteSuccess = (deletedCardId) => {
+    if (cards) {
+      setCards(cards.filter((c) => c.id !== deletedCardId));
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -464,6 +489,18 @@ const PageScreen = () => {
   return (
     <div className="flex flex-col items-center min-h-screen bg-[#F1F1F1]">
       <TopBar />
+      <EditCardModal
+        isOpen={!!editingCard}
+        onClose={() => setEditingCard(null)}
+        card={editingCard}
+        onCardUpdate={handleCardUpdate}
+      />
+      <DeleteConfirmationModal
+        isOpen={!!deletingItem}
+        onClose={() => setDeletingItem(null)}
+        item={deletingItem}
+        onDeleteSuccess={handleDeleteSuccess}
+      />
       {collectionSelectionOpen && (
         <button
           className="fixed inset-0 z-20"
@@ -581,9 +618,16 @@ const PageScreen = () => {
             {cards.map((card, index) => (
               <Reorder.Item key={card.id} value={card}>
                 <ListItem
+                  key={card.id + card.front}
                   card={card}
+                  setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
                   onClick={() => handleCardClick(index)}
-                  current={currentCard === index}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setFloatingMenuBar(true);
+                    setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                    setCurrentFloatingMenuBarCard(card);
+                  }}
                 />
               </Reorder.Item>
             ))}
@@ -602,8 +646,40 @@ const PageScreen = () => {
           </div>
         </div>
       </div>
+      <FloatingMenuBar
+        isOpen={floatingMenuBar}
+        onClose={() => setFloatingMenuBar(false)}
+        posX={floatingMenuBarPos.x}
+        posY={floatingMenuBarPos.y}
+      >
+        <div className="flex flex-col">
+          <button
+            onClick={() => {
+              setEditingCard(currentFloatingMenuBarCard);
+              setFloatingMenuBar(false);
+            }}
+            className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
+            <div>Edit</div>
+            <Edit size={16} />
+          </button>
+          <button
+            onClick={() => {
+              setDeletingItem({
+                id: currentFloatingMenuBarCard.id,
+                type: "card",
+              });
+              setFloatingMenuBar(false);
+            }}
+            className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
+            <div>Delete</div>
+            <Trash size={16} />
+          </button>
+        </div>
+      </FloatingMenuBar>
     </div>
   );
 };
 
-export default withAuth(PageScreen);
+export default withAuth(CreatePageScreen);
