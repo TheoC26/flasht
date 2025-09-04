@@ -12,7 +12,8 @@ export const useFlashcards = () => {
     const { data: collections, error } = await supabase
       .from("collections")
       .select("id, name, pinned, sets(name, id)")
-      .eq("owner_id", userId);
+      .eq("owner_id", userId)
+      .order("index", { ascending: true });
     if (error) {
       console.error("Error fetching collections:", error);
       return null;
@@ -141,9 +142,26 @@ export const useFlashcards = () => {
       console.error("User ID is required to create a collection.");
       return null;
     }
+
+    // Get the highest current index
+    const { data: maxIndexData, error: maxIndexError } = await supabase
+      .from('collections')
+      .select('index')
+      .eq('owner_id', userId)
+      .order('index', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (maxIndexError && maxIndexError.code !== 'PGRST116') { // Ignore 'no rows found' error
+        console.error('Error fetching max index:', maxIndexError);
+        return null;
+    }
+
+    const newIndex = (maxIndexData?.index || 0) + 1;
+
     const { data: collection, error } = await supabase
       .from("collections")
-      .insert([{ name, owner_id: userId, pinned: false }])
+      .insert([{ name, owner_id: userId, pinned: false, index: newIndex }])
       .select()
       .single();
 
@@ -375,6 +393,31 @@ export const useFlashcards = () => {
     return updatedSet;
   };
 
+  const updateCollectionOrder = async (updates) => {
+    if (!updates || updates.length === 0) {
+      return null;
+    }
+
+    // RLS policies work best with explicit updates rather than a broad upsert.
+    // We run all update promises in parallel for efficiency.
+    const updatePromises = updates.map((item) =>
+      supabase
+        .from("collections")
+        .update({ index: item.index })
+        .eq("id", item.id)
+    );
+
+    const results = await Promise.all(updatePromises);
+
+    const firstError = results.find((result) => result.error);
+    if (firstError) {
+      console.error("Error updating collection order:", firstError.error);
+      return null;
+    }
+
+    return results.map((result) => result.data);
+  };
+
   return {
     getCollections,
     getSet,
@@ -388,5 +431,6 @@ export const useFlashcards = () => {
     deleteCollection,
     deleteSet,
     updateSet,
+    updateCollectionOrder,
   };
 };
