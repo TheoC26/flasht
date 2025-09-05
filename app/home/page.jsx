@@ -1,6 +1,6 @@
-"use client";
+"use client"
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Delete, Edit, Pin, Trash } from "lucide-react";
+import { Pin, Edit, Trash } from "lucide-react";
 import TopBar from "@/components/TopBar";
 import FlashcardStack from "@/components/FlashcardStack";
 import { Reorder } from "framer-motion";
@@ -12,6 +12,7 @@ import { useFlashcards } from "@/utils/hooks/useFlashcards";
 import Link from "next/link";
 import EditCollectionTextModal from "@/components/EditCollectionTextModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+import FloatingMenuBar from "@/components/UI/FloatingMenuBar";
 
 // Custom hook for debouncing
 function useDebounce(value, delay) {
@@ -29,7 +30,7 @@ function useDebounce(value, delay) {
 
 function Home() {
   const { user } = useUser();
-  const { getCollections, updateCollection, getSet, updateCollectionOrder } =
+  const { getCollections, updateCollection, getSet, updateCollectionOrder, deleteCollection, deleteSet } =
     useFlashcards();
 
   const scrollContainerRef = useRef(null);
@@ -44,33 +45,35 @@ function Home() {
   const [selectedSet, setSelectedSet] = useState(null);
   const [editingCollection, setEditingCollection] = useState(null);
   const [deletingCollection, setDeletingCollection] = useState(null);
+  const [deletingSet, setDeletingSet] = useState(null);
 
-  const debouncedCollections = useDebounce(collections, 1000); // Debounce collections state
+  const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
+  const [isFloatingMenuBarOpen, setIsFloatingMenuBarOpen] = useState(false);
+  const [selectedSetForMenu, setSelectedSetForMenu] = useState(null);
+
+  const debouncedCollections = useDebounce(collections, 1000);
 
   useEffect(() => {
-    const fetchCollections = async () => {
-      if (user) {
-        setLoading(true);
-        const userCollections = await getCollections(user.id);
+    if (user) {
+      setLoading(true);
+      getCollections(user.id).then((userCollections) => {
         if (userCollections) {
           setCollections(userCollections);
         }
         setLoading(false);
-      }
-    };
-    fetchCollections();
+      });
+    }
   }, [user]);
 
-  // Effect to update order in DB when debounced collections change
   useEffect(() => {
-    if (debouncedCollections.length > 0) {
+    if (debouncedCollections.length > 0 && !loading) {
       const updates = debouncedCollections.map((collection, index) => ({
         id: collection.id,
         index: index,
       }));
       updateCollectionOrder(updates);
     }
-  }, [debouncedCollections, updateCollectionOrder]);
+  }, [debouncedCollections, updateCollectionOrder, loading]);
 
   const pinned = collections.filter((c) => c.pinned);
   const unpinned = collections.filter((c) => !c.pinned);
@@ -108,6 +111,14 @@ function Home() {
 
   const handleCollectionDelete = (deletedCollectionId) => {
     const newCollections = collections.filter((c) => c.id !== deletedCollectionId);
+    setCollections(newCollections);
+  };
+
+  const handleSetDeleteSuccess = (deletedSetId) => {
+    const newCollections = collections.map(collection => ({
+        ...collection,
+        sets: collection.sets.filter(set => set.id !== deletedSetId)
+    }));
     setCollections(newCollections);
   };
 
@@ -180,7 +191,7 @@ function Home() {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen bg-[#F1F1F1]">
         <TopBar />
-        <div>Study tip: reading the syllabus counts as preparation</div>
+        <div>Loading...</div>
       </main>
     );
   }
@@ -198,19 +209,57 @@ function Home() {
         />
       )}
 
-      <EditCollectionTextModal 
+      <EditCollectionTextModal
         isOpen={!!editingCollection}
         onClose={() => setEditingCollection(null)}
         collection={editingCollection}
         onCollectionUpdate={handleCollectionUpdate}
       />
 
-      <DeleteConfirmationModal 
+      <DeleteConfirmationModal
         isOpen={!!deletingCollection}
         onClose={() => setDeletingCollection(null)}
         item={deletingCollection}
         onDeleteSuccess={handleCollectionDelete}
       />
+
+      <DeleteConfirmationModal
+        isOpen={!!deletingSet}
+        onClose={() => setDeletingSet(null)}
+        item={deletingSet}
+        onDeleteSuccess={handleSetDeleteSuccess}
+      />
+
+      <FloatingMenuBar
+        isOpen={isFloatingMenuBarOpen}
+        onClose={() => setIsFloatingMenuBarOpen(false)}
+        posX={floatingMenuBarPos.x}
+        posY={floatingMenuBarPos.y}
+      >
+        <div className="flex flex-col">
+          <Link
+            href={`/edit/${selectedSetForMenu?.id}`}
+            className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
+            <div>Edit</div>
+            <Edit size={16} />
+          </Link>
+          <button
+            onClick={() => {
+              setDeletingSet({
+                id: selectedSetForMenu.id,
+                name: selectedSetForMenu.name,
+                type: "set",
+              });
+              setIsFloatingMenuBarOpen(false);
+            }}
+            className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+          >
+            <div>Delete</div>
+            <Trash size={16} />
+          </button>
+        </div>
+      </FloatingMenuBar>
 
       <div
         ref={scrollContainerRef}
@@ -242,22 +291,44 @@ function Home() {
               <div className="flex w-full items-center mb-6 group">
                 <h1 className="text-4xl uppercase flex-1">{collection.name}</h1>
                 <div className="flex items-center gap-2 pointer-events-none opacity-0 transition-all group-hover:opacity-100 group-hover:pointer-events-auto">
-                  <button onClick={() => setEditingCollection(collection)} className="hover:bg-[#dedede] rounded-lg p-1 cursor-pointer">
+                  <button
+                    onClick={() => setEditingCollection(collection)}
+                    className="hover:bg-[#dedede] rounded-lg p-1 cursor-pointer"
+                  >
                     <Edit strokeWidth={2.5} size={22} color={`#303030`} />
                   </button>
-                  <button onClick={() => setDeletingCollection({ id: collection.id, name: collection.name, type: 'collection' })} className="hover:bg-[#FFCACA] rounded-lg p-1 cursor-pointer">
+                  <button
+                    onClick={() =>
+                      setDeletingCollection({
+                        id: collection.id,
+                        name: collection.name,
+                        type: "collection",
+                      })
+                    }
+                    className="hover:bg-[#FFCACA] rounded-lg p-1 cursor-pointer"
+                  >
                     <Trash strokeWidth={2.5} size={22} color={`#303030`} />
                   </button>
                 </div>
               </div>
               <div className="w-full grid grid-cols-2 gap-5">
                 {collection.sets.map((set) => (
-                  <button
+                  <div
                     key={set.id}
-                    onClick={() => handleSetClick(set, collection)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                      setSelectedSetForMenu(set);
+                      setIsFloatingMenuBarOpen(true);
+                    }}
                   >
-                    <FlashcardStack title={set.name} />
-                  </button>
+                    <button
+                      className="w-full h-full"
+                      onClick={() => handleSetClick(set, collection)}
+                    >
+                      <FlashcardStack title={set.name} />
+                    </button>
+                  </div>
                 ))}
                 <Link
                   href={`/create?collection=${encodeURIComponent(
@@ -300,22 +371,44 @@ function Home() {
               <div className="flex w-full items-center mb-6 group">
                 <h1 className="text-4xl uppercase flex-1">{collection.name}</h1>
                 <div className="flex items-center gap-2 pointer-events-none opacity-0 transition-all group-hover:opacity-100 group-hover:pointer-events-auto">
-                  <button onClick={() => setEditingCollection(collection)} className="hover:bg-[#dedede] rounded-lg p-1 cursor-pointer">
+                  <button
+                    onClick={() => setEditingCollection(collection)}
+                    className="hover:bg-[#dedede] rounded-lg p-1 cursor-pointer"
+                  >
                     <Edit strokeWidth={2.5} size={22} color={`#303030`} />
                   </button>
-                  <button onClick={() => setDeletingCollection({ id: collection.id, name: collection.name, type: 'collection' })} className="hover:bg-[#FFCACA] rounded-lg p-1 cursor-pointer">
+                  <button
+                    onClick={() =>
+                      setDeletingCollection({
+                        id: collection.id,
+                        name: collection.name,
+                        type: "collection",
+                      })
+                    }
+                    className="hover:bg-[#FFCACA] rounded-lg p-1 cursor-pointer"
+                  >
                     <Trash strokeWidth={2.5} size={22} color={`#303030`} />
                   </button>
                 </div>
               </div>
               <div className="w-full grid grid-cols-2 gap-5">
                 {collection.sets.map((set) => (
-                  <button
+                  <div
                     key={set.id}
-                    onClick={() => handleSetClick(set, collection)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                      setSelectedSetForMenu(set);
+                      setIsFloatingMenuBarOpen(true);
+                    }}
                   >
-                    <FlashcardStack title={set.name} />
-                  </button>
+                    <button
+                      className="w-full h-full"
+                      onClick={() => handleSetClick(set, collection)}
+                    >
+                      <FlashcardStack title={set.name} />
+                    </button>
+                  </div>
                 ))}
                 <Link
                   href={`/create?collection=${encodeURIComponent(

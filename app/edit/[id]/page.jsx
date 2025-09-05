@@ -275,6 +275,7 @@ const EditPageScreen = () => {
           { id: newCardId, index: cards.length, front: "", back: "" },
         ]);
         setCurrentCard(cards.length);
+        flashcardInputRef.current.onNext();
       }
     } else {
       setCurrentCard(currentCard + 1);
@@ -300,7 +301,7 @@ const EditPageScreen = () => {
   if (isLoading) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen bg-[#F1F1F1]">
-        <TopBar />
+        <TopBar isHome={false} loading={isLoading} />
         <div>Study tip: reading the syllabus counts as preparation</div>
       </main>
     );
@@ -308,7 +309,7 @@ const EditPageScreen = () => {
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-[#F1F1F1]">
-      <TopBar />
+      <TopBar name={name} collection={collectionName} isHome={false} />
       <EditCardModal
         isOpen={!!editingCard}
         onClose={() => setEditingCard(null)}
@@ -320,6 +321,7 @@ const EditPageScreen = () => {
         onClose={() => setDeletingItem(null)}
         item={deletingItem}
         onDeleteSuccess={handleDeleteSuccess}
+        byPassDatabaseDelete={true}
       />
       {collectionSelectionOpen && (
         <button
@@ -420,7 +422,7 @@ const EditPageScreen = () => {
       </div>
 
       {/* All Flashcards Section */}
-      <div className="w-2xl mt-24 font-bold text-[#303030]">
+      <div className="w-2xl mt-24 mb-24 font-bold text-[#303030]">
         <Reorder.Group
           axis="y"
           values={cards}
@@ -444,15 +446,25 @@ const EditPageScreen = () => {
             </Reorder.Item>
           ))}
         </Reorder.Group>
-        <div className="w-full flex justify-center mt-6">
+        <div className="w-full fixed bottom-0 gap-3 left-0 right-0 flex justify-end pr-6 bg-gradient-to-t from-[#f1f1f1] to-transparent pb-6">
           <button
             onClick={handleUpdateSet}
-            className="mb-28 bg-white px-6 py-3 rounded-2xl flashcard-shadow cursor-pointer transition-all hover:scale-105 hover:bg-[#CBF2CB]"
+            className="bg-white px-6 py-3 rounded-2xl flashcard-shadow cursor-pointer transition-all hover:scale-105 hover:bg-[#CBF2CB]"
           >
             {updateLoading ? (
               <Loader2 className="w-18 animate-spin" color="#476b47" />
             ) : (
               "Update Set"
+            )}
+          </button>
+          <button
+            onClick={handleUpdateSet}
+            className="bg-white px-6 py-3 rounded-2xl flashcard-shadow cursor-pointer transition-all hover:scale-105 hover:bg-[#FFCACA]"
+          >
+            {updateLoading ? (
+              <Loader2 className="w-18 animate-spin" color="#476b47" />
+            ) : (
+              "Delete Set"
             )}
           </button>
         </div>
