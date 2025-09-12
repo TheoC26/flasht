@@ -253,7 +253,7 @@ function Home() {
               });
               setIsFloatingMenuBarOpen(false);
             }}
-            className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+            className="hover:bg-[#FFCACA] cursor-pointer rounded-xl p-2 px-2 text-left flex items-center justify-between"
           >
             <div>Delete</div>
             <Trash size={16} />
@@ -344,7 +344,7 @@ function Home() {
           ))}
         </Reorder.Group>
         {pinned.length > 0 && unpinned.length > 0 && (
-          <div className="min-w-1 rounded-full bg-[#cbcbcb] h-1/3 self-center z-50 mx-5" />
+          <div className="min-w-1 rounded-full bg-[#cbcbcb] h-1/3 self-center z-30 mx-5" />
         )}
         <Reorder.Group
           axis="x"

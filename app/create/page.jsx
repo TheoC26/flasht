@@ -658,7 +658,7 @@ const CreatePageScreen = () => {
               setEditingCard(currentFloatingMenuBarCard);
               setFloatingMenuBar(false);
             }}
-            className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+            className="hover:bg-[#F1F1F1] rounded-xl cursor-pointer p-2 px-2 text-left flex items-center justify-between"
           >
             <div>Edit</div>
             <Edit size={16} />
@@ -671,7 +671,7 @@ const CreatePageScreen = () => {
               });
               setFloatingMenuBar(false);
             }}
-            className="hover:bg-[#FFCACA] rounded-xl p-2 px-2 text-left flex items-center justify-between"
+            className="hover:bg-[#FFCACA] rounded-xl cursor-pointer p-2 px-2 text-left flex items-center justify-between"
           >
             <div>Delete</div>
             <Trash size={16} />

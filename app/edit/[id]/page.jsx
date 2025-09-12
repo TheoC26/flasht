@@ -32,7 +32,8 @@ const EditPageScreen = () => {
   const [currentFloatingMenuBarCard, setCurrentFloatingMenuBarCard] =
     useState(null);
   const [editingCard, setEditingCard] = useState(null);
-  const [deletingItem, setDeletingItem] = useState(null); // State for delete modal
+  const [deletingItem, setDeletingItem] = useState(null); // State for card delete modal
+  const [deletingSet, setDeletingSet] = useState(null); // State for set delete modal
 
   const [cards, setCards] = useState([]);
   const [currentCard, setCurrentCard] = useState(0);
@@ -43,6 +44,7 @@ const EditPageScreen = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   // Store initial data for comparison
   const [initialName, setInitialName] = useState("");
@@ -73,6 +75,10 @@ const EditPageScreen = () => {
     if (cards) {
       setCards(cards.filter((c) => c.id !== deletedCardId));
     }
+  };
+
+  const handleSetDeleteSuccess = () => {
+    router.push('/home');
   };
 
   // Function to generate AI suggestion for flashcard back
@@ -321,7 +327,12 @@ const EditPageScreen = () => {
         onClose={() => setDeletingItem(null)}
         item={deletingItem}
         onDeleteSuccess={handleDeleteSuccess}
-        byPassDatabaseDelete={true}
+      />
+      <DeleteConfirmationModal
+        isOpen={!!deletingSet}
+        onClose={() => setDeletingSet(null)}
+        item={deletingSet}
+        onDeleteSuccess={handleSetDeleteSuccess}
       />
       {collectionSelectionOpen && (
         <button
@@ -458,10 +469,10 @@ const EditPageScreen = () => {
             )}
           </button>
           <button
-            onClick={handleUpdateSet}
+            onClick={() => setDeletingSet({ id: setId, name: name, type: 'set' })}
             className="bg-white px-6 py-3 rounded-2xl flashcard-shadow cursor-pointer transition-all hover:scale-105 hover:bg-[#FFCACA]"
           >
-            {updateLoading ? (
+            {deleteLoading ? (
               <Loader2 className="w-18 animate-spin" color="#476b47" />
             ) : (
               "Delete Set"
