@@ -1,3 +1,4 @@
+import AuthProvider from "@/components/AuthProvider";
 import { Cabin_Sketch } from "next/font/google";
 import "./globals.css";
 
@@ -11,7 +12,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={cabinSketch.className}>{children}</body>
+      <body className={cabinSketch.className}>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

@@ -71,7 +71,7 @@ const TopBar = ({ name, collection, id, isHome = true, loading = false }) => {
             <div className="mx-2 my-2 font-light">{user.email}</div>
             <div className="h-px bg-[#9e9e9e] rounded-full mx-2 mb-2"></div>
             <Link
-              href={``}
+              href={`/profile`}
               className="hover:bg-[#F1F1F1] rounded-xl p-2 px-2 text-left flex items-center justify-between"
             >
               <div>Profile</div>
