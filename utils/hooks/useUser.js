@@ -8,17 +8,54 @@ export const useUser = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('Error fetching user:', error);
+    const fetchUser = async () => {
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+
+      if (authError) {
+        console.error('Error fetching auth user:', authError);
+        setLoading(false);
+        return;
       }
-      setUser(data?.user || null);
+
+      if (!authUser) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch the user's profile from the profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+        // Still set the auth user data even if profile fetch fails
+        setUser(authUser);
+      } else {
+        // Merge auth user data with profile data
+        setUser({ ...authUser, ...profile });
+      }
+
       setLoading(false);
     };
 
-    getUser();
-  }, []);
+    fetchUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        // Re-fetch user data on sign-in or sign-out
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+            fetchUser();
+        }
+    });
+
+    return () => {
+        authListener.subscription.unsubscribe();
+    };
+
+  }, [supabase]);
 
   return { user, loading };
 };
