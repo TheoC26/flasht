@@ -22,7 +22,21 @@ export const loginWithPassword = async (email, password) => {
 
 export const signup = async (email, password) => {
   const supabase = createClient();
-  return await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+
+  if (data.user) {
+    await supabase
+      .from("profiles")
+      .insert([{ id: data.user.id, email: data.user.email }]);
+  }
+
+  return { data, error };
 };
 
 export const logout = async () => {
