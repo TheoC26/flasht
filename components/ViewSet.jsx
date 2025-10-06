@@ -13,7 +13,13 @@ const ViewSet = ({ set, setSet, setData }) => {
   const [flipped, setFlipped] = useState(false);
   const [isGrid, setIsGrid] = useState(true);
   const [isShuffled, setIsShuffled] = useState(false);
-  const [isSetFlipped, setIsSetFlipped] = useState(setData.flipped);
+  const [isSetFlipped, setIsSetFlipped] = useState(false);
+
+  useEffect(() => {
+    if (setData) {
+      setIsSetFlipped(setData.flipped);
+    }
+  }, [setData]);
   const [discardPile, setDiscardPile] = useState([]);
   const [floatingMenuBar, setFloatingMenuBar] = useState(false);
   const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
