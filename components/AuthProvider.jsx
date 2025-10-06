@@ -1,30 +1,38 @@
-'use client';
+"use client";
 
-import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useUser } from "@/utils/hooks/useUser";
+import { UserProvider } from "@/context/UserContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { Loader2 } from "lucide-react";
 
 const AuthProvider = ({ children }) => {
+  const { user, loading } = useUser();
   const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        // When the user clicks the password recovery link, they are redirected here.
-        // The URL contains a hash fragment with the access token.
-        // The Supabase client handles this automatically and fires the PASSWORD_RECOVERY event.
-        // We can then redirect the user to the page where they can enter their new password.
-        router.push('/auth/reset-password');
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "PASSWORD_RECOVERY") {
+          router.push("/auth/reset-password");
+        }
       }
-    });
+    );
 
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, [supabase, router]);
 
-  return children;
+  if (loading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center"></div>
+    );
+  }
+
+  return <UserProvider value={{ user, loading }}>{children}</UserProvider>;
 };
 
 export default AuthProvider;

@@ -2,14 +2,14 @@
 import React, { useState } from 'react';
 import TopBar from '@/components/TopBar';
 import withAuth from '@/utils/withAuth';
-import { useUser } from '@/utils/hooks/useUser';
+import { useUserContext } from "@/context/UserContext";
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 
 const ProfilePage = () => {
-  const { user, loading: userLoading } = useUser();
+  const { user, loading: userLoading } = useUserContext();
   const supabase = createClient();
   const router = useRouter();
 

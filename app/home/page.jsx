@@ -7,7 +7,7 @@ import { Reorder } from "framer-motion";
 import SetModal from "@/components/SetModal";
 import OverflowScrollContainer from "@/components/UI/OverflowScrollContainer";
 import withAuth from "@/utils/withAuth";
-import { useUser } from "@/utils/hooks/useUser";
+import { useUserContext } from "@/context/UserContext";
 import { useFlashcards } from "@/utils/hooks/useFlashcards";
 import Link from "next/link";
 import EditCollectionTextModal from "@/components/EditCollectionTextModal";
@@ -29,7 +29,7 @@ function useDebounce(value, delay) {
 }
 
 function Home() {
-  const { user } = useUser();
+  const { user } = useUserContext();
   const { getCollections, updateCollection, getSet, updateCollectionOrder, deleteCollection, deleteSet } =
     useFlashcards();
 

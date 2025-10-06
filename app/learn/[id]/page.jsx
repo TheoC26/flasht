@@ -5,7 +5,7 @@ import BottomBar from "@/components/BottomBar";
 import AssessScreen from "@/components/Screens/AssessScreen";
 import LearnScreen from "@/components/Screens/LearnScreen";
 import TestScreen from "@/components/Screens/TestScreen";
-import { useUser } from "@/utils/hooks/useUser";
+import { useUserContext } from "@/context/UserContext";
 import { useFlashcards } from "@/utils/hooks/useFlashcards";
 import { useParams } from "next/navigation";
 
@@ -28,7 +28,7 @@ function useDebounce(value, delay) {
 
 export default function Learn() {
   const { id: setId } = useParams();
-  const { user } = useUser();
+  const { user } = useUserContext();
   const { getUserProgress, updateUserProgress, getSet } = useFlashcards();
 
   const [progress, setProgress] = useState(null);

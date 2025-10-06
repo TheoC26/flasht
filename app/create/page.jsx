@@ -5,7 +5,7 @@ import TopBar from "@/components/TopBar";
 import FlashcardInput from "@/components/FlashcardInput";
 import ListItem from "@/components/UI/ListItem";
 import withAuth from "@/utils/withAuth";
-import { useUser } from "@/utils/hooks/useUser";
+import { useUserContext } from "@/context/UserContext";
 import { useFlashcards } from "@/utils/hooks/useFlashcards";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Edit, Loader2, Trash } from "lucide-react";
@@ -15,7 +15,7 @@ import EditCardModal from "@/components/EditCardModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 
 const CreatePageScreen = () => {
-  const { user } = useUser();
+  const { user } = useUserContext();
   const { getCollections, createSet, createCollection } = useFlashcards();
   const router = useRouter();
   const searchParams = useSearchParams();

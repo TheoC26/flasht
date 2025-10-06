@@ -1,5 +1,5 @@
 import { logout } from "@/utils/auth";
-import { useUser } from "@/utils/hooks/useUser";
+import { useUserContext } from "@/context/UserContext";
 import { Cog, Edit, LogOut, PersonStanding, Trash, User, WalletCards } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -10,7 +10,7 @@ const TopBar = ({ name, collection, id, isHome = true, loading = false }) => {
 
   const router = useRouter();
 
-  const { user } = useUser();
+  const { user } = useUserContext();
   return (
     <div className="fixed top-0 left-0 right-0 flex justify-between p-6 text-[#303030] font-bold z-50 bg-gradient-to-b from-[#F1F1F1] to-[#F1F1F100]">
       <div className="bg-white rounded-2xl flex gap-3 flashcard-shadow h-12 transition-all hover:scale-105 group">
