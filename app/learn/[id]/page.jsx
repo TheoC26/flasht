@@ -29,10 +29,11 @@ function useDebounce(value, delay) {
 export default function Learn() {
   const { id: setId } = useParams();
   const { user } = useUserContext();
-  const { getUserProgress, updateUserProgress, getSet } = useFlashcards();
+  const { getUserProgress, updateUserProgress, getSet, toggleSetFlipped } = useFlashcards();
 
   const [progress, setProgress] = useState(null);
   const [setInfo, setSetInfo] = useState(null);
+  const [isSetFlipped, setIsSetFlipped] = useState(false);
   const [allCards, setAllCards] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,6 +44,13 @@ export default function Learn() {
   const debouncedPiles = useDebounce(piles, 1000);
   const debouncedHistory = useDebounce(history, 1000);
   const debouncedRound = useDebounce(round, 1000);
+
+  const handleToggleSetFlipped = async (setId) => {
+    const updatedSet = await toggleSetFlipped(setId);
+    if (updatedSet) {
+      setIsSetFlipped(updatedSet.flipped);
+    }
+  };
 
   const restartProgress = (cards = allCards) => {
     console.log(cards);
@@ -68,6 +76,7 @@ export default function Learn() {
           setAllCards(setData.cards);
           setProgress(userProgress);
           setSetInfo(setData.info);
+          setIsSetFlipped(setData.info.flipped);
 
           const totalCards = setData.cards.length;
           const knownCards = userProgress.piles.know?.length || 0;
@@ -185,9 +194,19 @@ export default function Learn() {
           history={history}
           setHistory={setHistory}
           setRound={setRound}
+          setInfo={setInfo}
+          isSetFlipped={isSetFlipped}
+          handleToggleSetFlipped={handleToggleSetFlipped}
         />
       ) : round % 2 == 1 ? (
-        <LearnScreen piles={piles} setPiles={setPiles} setRound={setRound} />
+        <LearnScreen
+          piles={piles}
+          setPiles={setPiles}
+          setRound={setRound}
+          setInfo={setInfo}
+          isSetFlipped={isSetFlipped}
+          handleToggleSetFlipped={handleToggleSetFlipped}
+        />
       ) : (
         round % 2 == 0 && (
           <TestScreen
@@ -197,6 +216,9 @@ export default function Learn() {
             setHistory={setHistory}
             setRound={setRound}
             restart={restartProgress}
+            setInfo={setInfo}
+            isSetFlipped={isSetFlipped}
+            handleToggleSetFlipped={handleToggleSetFlipped}
           />
         )
       )}

@@ -60,7 +60,7 @@ const TopBar = ({ name, collection, id, isHome = true, loading = false }) => {
       >
         {user && user.email[0].toUpperCase()}
       </button>
-      {profileOpen && (
+      {profileOpen && user && (
         <div
           className="fixed inset-0"
           onClick={() => {

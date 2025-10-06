@@ -196,6 +196,21 @@ function Home() {
     );
   }
 
+  if (!loading && collections.length === 0) {
+    return (
+      <main className="flex flex-col items-center justify-center min-h-screen bg-[#F1F1F1]">
+        <TopBar />
+        <div className="flex flex-col items-center justify-center text-center">
+          <h1 className="text-4xl font-bold text-[#303030] mb-4">Welcome to Flasht!</h1>
+          <p className="text-lg text-[#6D6D6D] mb-8">Create your first set of flashcards to get started.</p>
+          <Link href="/create" className="bg-white px-8 py-4 rounded-2xl flashcard-shadow-dark text-xl font-bold text-[#303030] transition-all hover:scale-105 hover:bg-[#CBF2CB]">
+            Create First Set
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex flex-col items-end justify-center min-h-screen bg-[#F1F1F1]">
       <TopBar />

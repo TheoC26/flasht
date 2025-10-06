@@ -7,11 +7,13 @@ import FloatingMenuBar from "./UI/FloatingMenuBar";
 import { Edit, Trash } from "lucide-react";
 import EditCardModal from "./EditCardModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal"; // Import Delete Modal
+import { useFlashcards } from "@/utils/hooks/useFlashcards";
 
 const ViewSet = ({ set, setSet, setData }) => {
   const [flipped, setFlipped] = useState(false);
   const [isGrid, setIsGrid] = useState(true);
   const [isShuffled, setIsShuffled] = useState(false);
+  const [isSetFlipped, setIsSetFlipped] = useState(setData.flipped);
   const [discardPile, setDiscardPile] = useState([]);
   const [floatingMenuBar, setFloatingMenuBar] = useState(false);
   const [floatingMenuBarPos, setFloatingMenuBarPos] = useState({ x: 0, y: 0 });
@@ -21,6 +23,14 @@ const ViewSet = ({ set, setSet, setData }) => {
   const [deletingItem, setDeletingItem] = useState(null); // State for delete modal
 
   const router = useRouter();
+  const { toggleSetFlipped } = useFlashcards();
+
+  const handleToggleSetFlipped = async (setId) => {
+    const updatedSet = await toggleSetFlipped(setId);
+    if (updatedSet) {
+      setIsSetFlipped(updatedSet.flipped);
+    }
+  };
 
   // on scroll, set floating menu bar to false
   useEffect(() => {
@@ -51,9 +61,9 @@ const ViewSet = ({ set, setSet, setData }) => {
 
   const handleDeleteSuccess = (deletedCardId) => {
     if (set) {
-        setSet(set.filter(c => c.id !== deletedCardId));
+      setSet(set.filter((c) => c.id !== deletedCardId));
     }
-    setDiscardPile(discardPile.filter(c => c.id !== deletedCardId));
+    setDiscardPile(discardPile.filter((c) => c.id !== deletedCardId));
   };
 
   // Shuffle or restore order
@@ -92,7 +102,9 @@ const ViewSet = ({ set, setSet, setData }) => {
   }, [discardPile, set, setSet]);
 
   const restart = useCallback(() => {
-    const allCardsOriginal = [...discardPile, ...set].sort((a, b) => a.index - b.index);
+    const allCardsOriginal = [...discardPile, ...set].sort(
+      (a, b) => a.index - b.index
+    );
     setSet(allCardsOriginal);
     setDiscardPile([]);
     setFlipped(false);
@@ -101,7 +113,7 @@ const ViewSet = ({ set, setSet, setData }) => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-        if (editingCard || deletingItem) return; // Disable shortcuts if a modal is open
+      if (editingCard || deletingItem) return; // Disable shortcuts if a modal is open
       switch (e.key) {
         case "1":
         case "ArrowLeft":
@@ -136,45 +148,75 @@ const ViewSet = ({ set, setSet, setData }) => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [back, flip, next, restart, set, router, setData, editingCard, deletingItem]);
+  }, [
+    back,
+    flip,
+    next,
+    restart,
+    set,
+    router,
+    setData,
+    editingCard,
+    deletingItem,
+  ]);
 
   const CardStack = ({ cards }) => (
     <div className="card-stack relative flex items-end mx-auto justify-center w-[600px] h-[310px]">
       <AnimatePresence>
-        {[...cards].slice(0, 5).map((card, i) => (
-          <motion.div
-            key={card.id}
-            layoutId={card.id}
-            className="absolute"
-            style={{ zIndex: 10 - i, y: i * 10, transformOrigin: "center center" }}
-          >
-            <Flashcard
-              card={card}
-              flipped={i === 0 && flipped}
-              isShuffled={isShuffled}
-              toggleShuffle={toggleShuffle}
-              setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setFloatingMenuBar(true);
-                setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
-                setCurrentFloatingMenuBarCard(card);
+        {[...cards].slice(0, 5).map((card, i) => {
+          const cardToShow = isSetFlipped
+            ? { ...card, front: card.back, back: card.front }
+            : card;
+          return (
+            <motion.div
+              key={card.id}
+              layoutId={card.id}
+              className="absolute"
+              style={{
+                zIndex: 10 - i,
+                y: i * 10,
+                transformOrigin: "center center",
               }}
-            />
-          </motion.div>
-        ))}
+            >
+              <Flashcard
+                card={cardToShow}
+                flipped={i === 0 && flipped}
+                isShuffled={isShuffled}
+                toggleShuffle={toggleShuffle}
+                setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setFloatingMenuBar(true);
+                  setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                  setCurrentFloatingMenuBarCard(card);
+                }}
+                setId={setData.id}
+                toggleSetFlipped={handleToggleSetFlipped}
+                isSetFlipped={isSetFlipped}
+              />
+            </motion.div>
+          );
+        })}
       </AnimatePresence>
       <div className="absolute -left-10 -right-10 -bottom-[40px] h-10 bg-gradient-to-b from-[#f1f1f100] to-[#f1f1f1] z-20"></div>
       <div className="absolute -left-10 -right-10 -bottom-[100px] h-[60px] bg-[#f1f1f1] z-20"></div>
       <AnimatePresence>
-        <div className="absolute -left-12 bottom-0 w-10" style={{ perspective: "200px" }}>
+        <div
+          className="absolute -left-12 bottom-0 w-10"
+          style={{ perspective: "200px" }}
+        >
           {[...cards].reverse().map((card, i) => (
             <motion.div
               layoutId={card.id + "mini"}
               key={card.id + "mini"}
               transition={{ duration: 0.1 }}
               className="w-full absolute flashcard-shadow aspect-[1.79] bg-white rounded-sm"
-              style={{ bottom: `${i * 3}px`, zIndex: i, transform: `rotateX(20deg)`, boxShadow: "0 1px 7px rgba(0,0,0,0.08)" }}
+              style={{
+                bottom: `${i * 3}px`,
+                zIndex: i,
+                transform: `rotateX(20deg)`,
+                boxShadow: "0 1px 7px rgba(0,0,0,0.08)",
+              }}
             ></motion.div>
           ))}
         </div>
@@ -182,7 +224,9 @@ const ViewSet = ({ set, setSet, setData }) => {
     </div>
   );
 
-  const allCards = set ? [...discardPile, ...set].sort((a, b) => a.index - b.index) : [];
+  const allCards = set
+    ? [...discardPile, ...set].sort((a, b) => a.index - b.index)
+    : [];
 
   return (
     <div className=" mx-auto flex-col items-center justify-center mt-5 relative">
@@ -298,36 +342,49 @@ const ViewSet = ({ set, setSet, setData }) => {
         </div>
         {isGrid ? (
           <div className="w-full grid grid-cols-3 mt-3 gap-2 pb-28">
-            {allCards.map((card) => (
-              <Flashcard
-                key={card.id + card.front}
-                card={card}
-                size="grid"
-                setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setFloatingMenuBar(true);
-                  setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
-                  setCurrentFloatingMenuBarCard(card);
-                }}
-              />
-            ))}
+            {allCards.map((card) => {
+              const cardToShow = isSetFlipped
+                ? { ...card, front: card.back, back: card.front }
+                : card;
+              return (
+                <Flashcard
+                  key={card.id + card.front}
+                  card={cardToShow}
+                  size="grid"
+                  setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setFloatingMenuBar(true);
+                    setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                    setCurrentFloatingMenuBarCard(card);
+                  }}
+                  setId={setData.id}
+                  toggleSetFlipped={handleToggleSetFlipped}
+                  isSetFlipped={isSetFlipped}
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="flex-col mt-3 pb-28">
-            {allCards.map((card) => (
-              <ListItem
-                key={card.id + card.front}
-                card={card}
-                setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setFloatingMenuBar(true);
-                  setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
-                  setCurrentFloatingMenuBarCard(card);
-                }}
-              />
-            ))}
+            {allCards.map((card) => {
+              const cardToShow = isSetFlipped
+                ? { ...card, front: card.back, back: card.front }
+                : card;
+              return (
+                <ListItem
+                  key={card.id + card.front}
+                  card={cardToShow}
+                  setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setFloatingMenuBar(true);
+                    setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
+                    setCurrentFloatingMenuBarCard(card);
+                  }}
+                />
+              );
+            })}
           </div>
         )}
       </div>

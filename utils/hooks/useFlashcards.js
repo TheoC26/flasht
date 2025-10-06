@@ -418,6 +418,43 @@ export const useFlashcards = () => {
     return results.map((result) => result.data);
   };
 
+  const toggleSetFlipped = async (setId) => {
+    if (!setId) {
+      console.error("Set ID is required to toggle the flipped state.");
+      return null;
+    }
+
+    // First, get the current value of 'flipped'
+    const { data: set, error: fetchError } = await supabase
+      .from("sets")
+      .select("flipped")
+      .eq("id", setId)
+      .single();
+
+    if (fetchError) {
+      console.error("Error fetching set's flipped state:", fetchError);
+      return null;
+    }
+
+    // Toggle the value
+    const newFlippedState = !set.flipped;
+
+    // Update the 'flipped' value in the database
+    const { data: updatedSet, error: updateError } = await supabase
+      .from("sets")
+      .update({ flipped: newFlippedState })
+      .eq("id", setId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Error updating set's flipped state:", updateError);
+      return null;
+    }
+
+    return updatedSet;
+  };
+
   return {
     getCollections,
     getSet,
@@ -432,5 +469,6 @@ export const useFlashcards = () => {
     deleteSet,
     updateSet,
     updateCollectionOrder,
+    toggleSetFlipped,
   };
 };

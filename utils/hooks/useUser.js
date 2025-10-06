@@ -17,26 +17,38 @@ export const useUser = () => {
         return;
       }
 
-      if (!authUser) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
+      if (authUser) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
 
-      // Fetch the user's profile from the profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
+        if (profileError && profileError.code === 'PGRST116') {
+          // Profile not found, so create one
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert([
+              { id: authUser.id, email: authUser.email },
+            ])
+            .select()
+            .single();
 
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-        // Still set the auth user data even if profile fetch fails
-        setUser(authUser);
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+            setUser(authUser); // Set user without profile data
+          } else {
+            setUser({ ...authUser, ...newProfile });
+          }
+        } else if (profileError) {
+          console.error('Error fetching user profile:', profileError);
+          setUser(authUser); // Set user without profile data
+        } else {
+          // Profile found, merge with auth user data
+          setUser({ ...authUser, ...profile });
+        }
       } else {
-        // Merge auth user data with profile data
-        setUser({ ...authUser, ...profile });
+        setUser(null);
       }
 
       setLoading(false);
@@ -45,9 +57,10 @@ export const useUser = () => {
     fetchUser();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-        // Re-fetch user data on sign-in or sign-out
-        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-            fetchUser();
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+        } else if (event === 'SIGNED_IN') {
+          fetchUser();
         }
     });
 

@@ -11,6 +11,9 @@ export default function Flashcard({
   toggleShuffle = () => {},
   onContextMenu,
   setCurrentFloatingMenuBarCard,
+  setId,
+  toggleSetFlipped,
+  isSetFlipped,
 }) {
   const [isFlipped, setIsFlipped] = useState(flipped);
 
@@ -70,10 +73,13 @@ export default function Flashcard({
             </button>
             <button className="absolute top-1.5 right-16 p-1 rounded-lg transition-all hover:bg-[#F1F1F1] cursor-pointer">
               <Repeat2
-                color={"#959595"}
+                color={isSetFlipped ? "#303030" : "#959595"}
                 size={24}
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (toggleSetFlipped) {
+                    toggleSetFlipped(setId);
+                  }
                 }}
               />
             </button>

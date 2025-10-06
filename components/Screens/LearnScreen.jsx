@@ -7,7 +7,7 @@ import { Edit, Trash } from "lucide-react";
 import EditCardModal from "../EditCardModal";
 import DeleteConfirmationModal from "../DeleteConfirmationModal";
 
-const LearnScreen = ({ piles, setPiles, setRound }) => {
+const LearnScreen = ({ piles, setPiles, setRound, setInfo, isSetFlipped, handleToggleSetFlipped }) => {
   const [flipped, setFlipped] = useState(false);
 
   const [isGrid, setIsGrid] = useState(true);
@@ -202,7 +202,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
               }}
             >
               <Flashcard
-                card={card}
+                card={isSetFlipped ? { ...card, front: card.back, back: card.front } : card}
                 flipped={i === 0 && flipped}
                 isShuffled={isShuffled}
                 toggleShuffle={toggleShuffle}
@@ -214,6 +214,9 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
                   setCurrentFloatingMenuBarCard(card);
                   setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
                 }}
+                setId={setInfo ? setInfo.id : null}
+                toggleSetFlipped={handleToggleSetFlipped}
+                isSetFlipped={isSetFlipped}
               />
             </motion.div>
           ))}
@@ -365,7 +368,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
               .map((card, i) => (
                 <Flashcard
                   key={card.id + card.front}
-                  card={card}
+                  card={isSetFlipped ? { ...card, front: card.back, back: card.front } : card}
                   size="grid"
                   setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
                   onContextMenu={(e) => {
@@ -374,6 +377,9 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
                     setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
                     setCurrentFloatingMenuBarCard(card);
                   }}
+                  setId={setInfo ? setInfo.id : null}
+                  toggleSetFlipped={handleToggleSetFlipped}
+                  isSetFlipped={isSetFlipped}
                 />
               ))}
           </div>
@@ -384,7 +390,7 @@ const LearnScreen = ({ piles, setPiles, setRound }) => {
               .map((card, i) => (
                 <ListItem
                   key={card.id + card.front}
-                  card={card}
+                  card={isSetFlipped ? { ...card, front: card.back, back: card.front } : card}
                   setCurrentFloatingMenuBarCard={setCurrentFloatingMenuBarCard}
                   onContextMenu={(e) => {
                     e.preventDefault();

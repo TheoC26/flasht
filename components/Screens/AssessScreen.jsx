@@ -8,7 +8,7 @@ import { Edit, Trash } from "lucide-react";
 import EditCardModal from "../EditCardModal";
 import DeleteConfirmationModal from "../DeleteConfirmationModal";
 
-const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
+const AssessScreen = ({ piles, setPiles, history, setHistory, setRound, setInfo, isSetFlipped, handleToggleSetFlipped }) => {
   const draggedCardRef = useRef(null);
   const [flipped, setFlipped] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
@@ -398,7 +398,7 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
               }}
             >
               <Flashcard
-                card={card}
+                card={isSetFlipped ? { ...card, front: card.back, back: card.front } : card}
                 size={isMobile && isSmall ? "mobile" : size}
                 flipped={pileName === "main" && i === 0 && flipped}
                 isShuffled={isShuffled}
@@ -410,6 +410,9 @@ const AssessScreen = ({ piles, setPiles, history, setHistory, setRound }) => {
                    setCurrentFloatingMenuBarCard(card);
                    setFloatingMenuBarPos({ x: e.clientX, y: e.clientY });
                 }}
+                setId={setInfo ? setInfo.id : null}
+                toggleSetFlipped={handleToggleSetFlipped}
+                isSetFlipped={isSetFlipped}
               />
             </motion.div>
           ))}
